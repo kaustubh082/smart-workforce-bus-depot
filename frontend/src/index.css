@@ -1,0 +1,340 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================
+   CSS Custom Properties — Light Theme
+   ========================================= */
+:root {
+  --bg-page: #F7F9FC;
+  --bg-white: #FFFFFF;
+  --bg-muted: #EEF2F7;
+  --bg-card: #FFFFFF;
+
+  --text-primary: #14212B;
+  --text-secondary: #425466;
+  --text-muted: #6B7E92;
+  --text-faint: #98A9BB;
+
+  --border: #E5EAF0;
+  --border-strong: #D0DAE6;
+
+  --primary-900: #0B2239;
+  --primary-800: #123B5D;
+  --primary-700: #176B87;
+  --accent-teal: #19A7A8;
+  --accent-blue: #2D8CFF;
+
+  --shadow-card: 0 1px 4px rgba(18, 59, 93, 0.06), 0 4px 16px rgba(18, 59, 93, 0.05);
+  --shadow-float: 0 12px 32px rgba(18, 59, 93, 0.12);
+  --shadow-modal: 0 8px 40px rgba(18, 59, 93, 0.14);
+
+  --sidebar-w: 264px;
+  --topbar-h: 64px;
+}
+
+/* =========================================
+   Reset & Base
+   ========================================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg-page);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  font-family: 'Outfit', sans-serif;
+  color: var(--text-primary);
+}
+
+/* =========================================
+   Scrollbar
+   ========================================= */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F7F9FC;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D0DAE6;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-teal);
+}
+
+/* =========================================
+   Selection
+   ========================================= */
+::selection {
+  background: rgba(25, 167, 168, 0.15);
+}
+
+/* =========================================
+   Card component
+   ========================================= */
+.card {
+  background: #FFFFFF;
+  border: 1px solid #E5EAF0;
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+}
+
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 24px rgba(18, 59, 93, 0.11);
+  border-color: rgba(25, 167, 168, 0.3);
+}
+
+/* =========================================
+   Form Inputs
+   ========================================= */
+.input-base {
+  width: 100%;
+  padding: 11px 14px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  background: #FFFFFF;
+  border: 1.5px solid #E5EAF0;
+  border-radius: 10px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.input-base::placeholder {
+  color: #98A9BB;
+}
+
+.input-base:focus {
+  border-color: #19A7A8;
+  box-shadow: 0 0 0 3px rgba(25, 167, 168, 0.12);
+}
+
+.input-base.error {
+  border-color: #ef4444;
+}
+
+.input-base.error:focus {
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+}
+
+/* =========================================
+   Glass surface (light)
+   ========================================= */
+.glass {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+/* =========================================
+   Gradient text
+   ========================================= */
+.gradient-text {
+  background: linear-gradient(135deg, #19A7A8, #2D8CFF);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-primary {
+  background: linear-gradient(135deg, #123B5D, #176B87);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* =========================================
+   Badges
+   ========================================= */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.badge-success {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.badge-danger {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.badge-warning {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.badge-info {
+  background: #E6F7F7;
+  color: #178F90;
+  border: 1px solid #b2e8e8;
+}
+
+.badge-neutral {
+  background: #EEF2F7;
+  color: #425466;
+  border: 1px solid #E5EAF0;
+}
+
+/* =========================================
+   Section divider
+   ========================================= */
+.divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(25, 167, 168, 0.2), transparent);
+}
+
+/* =========================================
+   Sidebar + Layout
+   ========================================= */
+.sidebar {
+  width: var(--sidebar-w);
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  background: #FFFFFF;
+  border-right: 1px solid #E5EAF0;
+  z-index: 40;
+  overflow-y: auto;
+  transition: transform 0.3s ease;
+}
+
+@media (max-width: 1023px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+}
+
+/* =========================================
+   Float animation
+   ========================================= */
+@keyframes floatY {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.float-anim {
+  animation: floatY 6s ease-in-out infinite;
+}
+
+.float-anim-slow {
+  animation: floatY 9s ease-in-out infinite;
+}
+
+.float-anim-fast {
+  animation: floatY 4s ease-in-out infinite;
+}
+
+/* Route dash animation */
+@keyframes routeDash {
+  to {
+    stroke-dashoffset: -28;
+  }
+}
+
+.route-dash {
+  animation: routeDash 1.4s linear infinite;
+}
+
+/* =========================================
+   Reduced motion
+   ========================================= */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* =========================================
+   Worker UI accessibility
+   ========================================= */
+.worker-ui {
+  font-size: 1.0625rem;
+}
+
+.worker-ui .btn-primary {
+  min-height: 52px;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+/* =========================================
+   Tables
+   ========================================= */
+.table-row-hover:hover {
+  background: #F7F9FC;
+}
+
+/* =========================================
+   Stat card accent bar
+   ========================================= */
+.stat-card-accent {
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card-accent::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #19A7A8, #2D8CFF);
+  border-radius: 14px 14px 0 0;
+}
