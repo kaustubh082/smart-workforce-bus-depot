@@ -1,0 +1,20 @@
+import express from 'express';
+import cors from 'cors';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import authRoutes from './routes/authRoutes.js';
+import managementRoutes from './routes/managementRoutes.js';
+import dutyRoutes from './routes/dutyRoutes.js';
+import workforceRoutes from './routes/workforceRoutes.js';
+import insightRoutes from './routes/insightRoutes.js';
+
+export const app = express();
+app.use(cors({ origin: process.env.CLIENT_ORIGIN || 'http://localhost:5173' }));
+app.use(express.json({ limit: '100kb' }));
+app.get('/api/health', (_req, res) => res.json({ success: true, data: { status: 'ok' } }));
+app.use('/api/auth', authRoutes);
+app.use('/api', managementRoutes);
+app.use('/api/duties', dutyRoutes);
+app.use('/api', workforceRoutes);
+app.use('/api', insightRoutes);
+app.use(notFoundHandler);
+app.use(errorHandler);

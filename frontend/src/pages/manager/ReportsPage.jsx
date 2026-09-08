@@ -1,113 +1,67 @@
 import { motion } from 'framer-motion';
-import { BarChart2, TrendingUp, Users, Bus } from 'lucide-react';
+import { BarChart3, TrendingUp, Users, CheckCircle, Download } from 'lucide-react';
 import { fadeUp, staggerContainer } from '../../animations/variants';
-import { PageHeader, StatCard } from '../../components/ui';
-import { MOCK_ATTENDANCE, MOCK_EMPLOYEES, MOCK_STATS } from '../../mock/data';
+import { PageHeader, StatCard, Button } from '../../components/ui';
+import { MOCK_STATS } from '../../mock/data';
 
-// Simple bar chart using CSS
-function BarChart({ data, max }) {
-    const colors = ['bg-teal-500', 'bg-teal-400', 'bg-teal-600', 'bg-amber-400', 'bg-teal-500', 'bg-teal-500', 'bg-teal-400'];
-    return (
-        <div className="flex items-end gap-2 h-32">
-            {data.map((item, i) => (
-                <div key={item.label} className="flex flex-col items-center gap-1 flex-1">
-                    <span className="text-[10px] text-gray-500">{item.value}</span>
-                    <div className={`w-full rounded-t-sm ${colors[i % colors.length]} opacity-80 transition-all`}
-                        style={{ height: `${(item.value / max) * 100}%` }} />
-                    <span className="text-[10px] text-gray-500 text-center leading-tight">{item.label}</span>
-                </div>
-            ))}
-        </div>
-    );
-}
-
-const WEEKLY_ATTENDANCE = [
-    { label: 'Mon', value: 45 }, { label: 'Tue', value: 43 }, { label: 'Wed', value: 44 },
-    { label: 'Thu', value: 41 }, { label: 'Fri', value: 46 }, { label: 'Sat', value: 38 }, { label: 'Sun', value: 20 },
+const MONTHLY_ATTENDANCE = [
+    { month: 'Apr', pct: 91 }, { month: 'May', pct: 88 }, { month: 'Jun', pct: 94 },
+    { month: 'Jul', pct: 89 }, { month: 'Aug', pct: 96 }, { month: 'Sep', pct: 93 },
 ];
-
-const ROLE_DIST = [
-    { label: 'Drivers', value: MOCK_STATS.activeDrivers, color: 'bg-teal-500' },
-    { label: 'Conductors', value: MOCK_STATS.activeConductors, color: 'bg-amber-400' },
-    { label: 'Managers', value: 2, color: 'bg-blue-500' },
-];
+const MAX = Math.max(...MONTHLY_ATTENDANCE.map(m => m.pct));
 
 export default function ReportsPage() {
-    const presentToday = MOCK_ATTENDANCE.filter((a) => a.date === '2026-09-05' && a.status === 'present').length;
-
     return (
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-8">
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
             <motion.div variants={fadeUp}>
-                <PageHeader title="Reports & Analytics" subtitle="Operational overview and key metrics" />
+                <PageHeader title="Reports & Analytics" subtitle="September 2026"
+                    action={<Button variant="secondary"><Download size={15} /> Export CSV</Button>} />
             </motion.div>
 
             {/* Summary stats */}
             <motion.div variants={staggerContainer} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                    { label: 'Total Employees', value: MOCK_STATS.totalEmployees, icon: Users, color: 'teal' },
-                    { label: 'Operational Fleet', value: MOCK_STATS.operationalBuses, icon: Bus, color: 'blue' },
-                    { label: 'Attendance Today', value: `${MOCK_STATS.attendanceToday}%`, icon: TrendingUp, color: 'green' },
-                    { label: 'Active Routes', value: MOCK_STATS.routesActive, icon: BarChart2, color: 'amber' },
-                ].map((s) => (
-                    <motion.div key={s.label} variants={fadeUp}>
-                        <StatCard {...s} />
-                    </motion.div>
-                ))}
+                <motion.div variants={fadeUp}><StatCard label="Total Employees" value={MOCK_STATS.totalEmployees} icon={Users} color="teal" /></motion.div>
+                <motion.div variants={fadeUp}><StatCard label="Attendance Rate" value={MOCK_STATS.attendanceToday} suffix="%" icon={TrendingUp} color="green" change="This month" /></motion.div>
+                <motion.div variants={fadeUp}><StatCard label="Duties Completed" value={48} icon={CheckCircle} color="blue" change="This month" /></motion.div>
+                <motion.div variants={fadeUp}><StatCard label="Leaves Approved" value={12} icon={BarChart3} color="amber" change="This month" /></motion.div>
             </motion.div>
 
-            {/* Two charts */}
-            <motion.div variants={staggerContainer} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Attendance chart */}
-                <motion.div variants={fadeUp} className="card p-5 border border-white/06">
-                    <p className="text-sm font-semibold font-outfit text-white mb-4">Weekly Attendance (This Week)</p>
-                    <BarChart data={WEEKLY_ATTENDANCE} max={50} />
-                </motion.div>
-
-                {/* Role distribution */}
-                <motion.div variants={fadeUp} className="card p-5 border border-white/06">
-                    <p className="text-sm font-semibold font-outfit text-white mb-4">Workforce Composition</p>
-                    <div className="space-y-4">
-                        {ROLE_DIST.map((r) => (
-                            <div key={r.label}>
-                                <div className="flex justify-between text-sm mb-1.5">
-                                    <span className="text-gray-400">{r.label}</span>
-                                    <span className="text-white font-medium">{r.value}</span>
-                                </div>
-                                <div className="h-2 bg-navy-700 rounded-full overflow-hidden">
-                                    <motion.div
-                                        className={`h-full rounded-full ${r.color}`}
-                                        initial={{ width: 0 }}
-                                        whileInView={{ width: `${(r.value / MOCK_STATS.totalEmployees) * 100}%` }}
-                                        viewport={{ once: true }}
-                                        transition={{ duration: 1, ease: 'easeOut' }}
-                                    />
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </motion.div>
-            </motion.div>
-
-            {/* Leave breakdown */}
-            <motion.div variants={fadeUp} className="card p-5 border border-white/06">
-                <p className="text-sm font-semibold font-outfit text-white mb-4">Leave Status Summary</p>
-                <div className="grid grid-cols-3 gap-4 text-center">
-                    {[
-                        { label: 'Pending', value: 2, color: 'text-amber-400' },
-                        { label: 'Approved', value: 1, color: 'text-green-400' },
-                        { label: 'Rejected', value: 0, color: 'text-red-400' },
-                    ].map((s) => (
-                        <div key={s.label}>
-                            <p className={`text-3xl font-bold font-outfit ${s.color}`}>{s.value}</p>
-                            <p className="text-xs text-gray-500 mt-1">{s.label}</p>
+            {/* Attendance bar chart */}
+            <motion.div variants={fadeUp} className="card p-6">
+                <h3 className="font-outfit font-bold text-[#14212B] mb-5">Monthly Attendance Trend</h3>
+                <div className="flex items-end gap-3 h-48">
+                    {MONTHLY_ATTENDANCE.map(({ month, pct }) => (
+                        <div key={month} className="flex-1 flex flex-col items-center gap-2">
+                            <span className="text-xs font-bold text-[#19A7A8]">{pct}%</span>
+                            <div className="w-full rounded-t-lg overflow-hidden"
+                                style={{ height: `${(pct / MAX) * 160}px`, background: 'linear-gradient(180deg,#19A7A8,#2D8CFF)', opacity: 0.75 + (pct / MAX) * 0.25 }} />
+                            <span className="text-[10px] text-[#98A9BB] font-medium">{month}</span>
                         </div>
                     ))}
                 </div>
             </motion.div>
 
-            {/* Export note */}
-            <motion.div variants={fadeUp} className="text-center py-4">
-                <p className="text-xs text-gray-600">CSV / PDF export available after backend integration</p>
+            {/* Role breakdown */}
+            <motion.div variants={fadeUp} className="card p-6">
+                <h3 className="font-outfit font-bold text-[#14212B] mb-4">Workforce Breakdown</h3>
+                <div className="space-y-4">
+                    {[
+                        { label: 'Drivers', count: 18, total: MOCK_STATS.totalEmployees, color: '#19A7A8' },
+                        { label: 'Conductors', count: 14, total: MOCK_STATS.totalEmployees, color: '#2D8CFF' },
+                    ].map(({ label, count, total, color }) => (
+                        <div key={label}>
+                            <div className="flex justify-between text-sm mb-1.5">
+                                <span className="font-medium text-[#14212B]">{label}</span>
+                                <span className="text-[#6B7E92]">{count} of {total}</span>
+                            </div>
+                            <div className="h-2.5 bg-[#EEF2F7] rounded-full overflow-hidden">
+                                <motion.div initial={{ width: 0 }} animate={{ width: `${(count / total) * 100}%` }}
+                                    transition={{ duration: 0.8, ease: 'easeOut' }}
+                                    className="h-full rounded-full" style={{ background: color }} />
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </motion.div>
         </motion.div>
     );

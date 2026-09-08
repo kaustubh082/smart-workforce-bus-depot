@@ -1,0 +1,30 @@
+import { Router } from 'express';
+import { query, transaction } from '../db/pool.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+import { ApiError, notFound } from '../utils/errors.js';
+import { audit } from '../services/auditService.js';
+const router=Router(); const manager=[requireAuth,requireRole('DEPOT_MANAGER','ADMIN')];
+const dutySelect=`SELECT d.*,e.name employee_name,e.employee_id employee_code,b.registration_number,r.route_code,r.route_name FROM duties d JOIN employees e ON e.id=d.employee_id JOIN buses b ON b.id=d.bus_id JOIN routes r ON r.id=d.route_id`;
+const timeOK=(v)=>/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(v||'');
+async function validateDuty(c,d,id=null){
+  const {employee_id,bus_id,route_id,duty_date,start_time,end_time,shift}=d;
+  if(!employee_id||!bus_id||!route_id||!duty_date||!timeOK(start_time)||!timeOK(end_time)||!['MORNING','AFTERNOON','NIGHT'].includes(shift))throw new ApiError(400,'Employee, bus, route, date, valid times, and shift are required.');
+  const [employees]=await c.execute(`SELECT e.id,u.role FROM employees e JOIN users u ON u.employee_id=e.id WHERE e.id=? AND e.status='ACTIVE'`,[employee_id]);
+  if(!employees[0])throw new ApiError(400,'Employee does not exist or is inactive.');
+  if(!['DRIVER','CONDUCTOR'].includes(employees[0].role))throw new ApiError(400,'Only drivers and conductors can be allocated duties.');
+  const [leave]=await c.execute("SELECT id FROM leaves WHERE employee_id=? AND status='APPROVED' AND start_date<=? AND end_date>=?",[employee_id,duty_date,duty_date]); if(leave[0])throw new ApiError(409,'Employee is on approved leave for this date.');
+  const [bus]=await c.execute("SELECT id FROM buses WHERE id=? AND status='AVAILABLE'",[bus_id]);if(!bus[0])throw new ApiError(409,'Bus does not exist or is not available.');
+  const [maintenance]=await c.execute("SELECT id FROM maintenance WHERE bus_id=? AND status IN ('PENDING','IN_PROGRESS')",[bus_id]);if(maintenance[0])throw new ApiError(409,'Bus is under maintenance.');
+  const [route]=await c.execute('SELECT id FROM routes WHERE id=?',[route_id]);if(!route[0])throw new ApiError(400,'Route does not exist.');
+  const overlap=`d.duty_date=? AND d.status!='CANCELLED' AND d.start_time < ?::time AND d.end_time > ?::time`;
+  const [empConflict]=await c.execute(`SELECT id FROM duties d WHERE d.employee_id=? AND ${overlap}${id?' AND d.id!=?':''}`,[employee_id,duty_date,end_time,start_time,...(id?[id]:[])]);if(empConflict[0])throw new ApiError(409,'Employee already has an overlapping duty.');
+  const [busConflict]=await c.execute(`SELECT id FROM duties d WHERE d.bus_id=? AND ${overlap}${id?' AND d.id!=?':''}`,[bus_id,duty_date,end_time,start_time,...(id?[id]:[])]);if(busConflict[0])throw new ApiError(409,'Bus already has an overlapping duty.');
+}
+router.get('/',...manager,asyncHandler(async(req,res)=>{const [rows]=await query(`${dutySelect} WHERE d.duty_date BETWEEN ? AND ? ORDER BY d.duty_date,d.start_time`,[req.query.from||'1000-01-01',req.query.to||'9999-12-31']);res.json({success:true,data:rows})}));
+router.get('/my',requireAuth,asyncHandler(async(req,res)=>{const [rows]=await query(`${dutySelect} WHERE d.employee_id=? ORDER BY d.duty_date DESC,d.start_time DESC`,[req.user.employee_db_id]);res.json({success:true,data:rows})}));
+router.get('/:id',requireAuth,asyncHandler(async(req,res)=>{const [rows]=await query(`${dutySelect} WHERE d.id=?`,[req.params.id]);if(!rows[0])throw notFound('Duty not found.');if(!['DEPOT_MANAGER','ADMIN'].includes(req.user.role)&&rows[0].employee_id!==req.user.employee_db_id)throw new ApiError(403,'You cannot view another employee’s duty.');res.json({success:true,data:rows[0]})}));
+router.post('/',...manager,asyncHandler(async(req,res)=>{const d=req.body;const duty=await transaction(async c=>{await validateDuty(c,d);const [r]=await c.execute('INSERT INTO duties (employee_id,bus_id,route_id,duty_date,shift,start_time,end_time,created_by) VALUES (?,?,?,?,?,?,?,?)',[d.employee_id,d.bus_id,d.route_id,d.duty_date,d.shift,d.start_time,d.end_time,req.user.user_id]);const [u]=await c.execute('SELECT id FROM users WHERE employee_id=?',[d.employee_id]);await c.execute('INSERT INTO notifications (user_id,type,title,message) VALUES (?,?,?,?)',[u[0].id,'DUTY_ASSIGNED','New duty assigned',`You have been assigned a ${d.shift.toLowerCase()} duty on ${d.duty_date}.`]);await audit(c,req.user.user_id,'DUTY_ALLOCATED',`Allocated duty ${r.insertId} to employee ${d.employee_id}.`);return r.insertId});res.status(201).json({success:true,data:{id:duty}})}));
+router.put('/:id',...manager,asyncHandler(async(req,res)=>{await transaction(async c=>{const [old]=await c.execute('SELECT * FROM duties WHERE id=?',[req.params.id]);if(!old[0])throw notFound('Duty not found.');const d={...old[0],...req.body};await validateDuty(c,d,req.params.id);await c.execute('UPDATE duties SET employee_id=?,bus_id=?,route_id=?,duty_date=?,shift=?,start_time=?,end_time=?,status=? WHERE id=?',[d.employee_id,d.bus_id,d.route_id,d.duty_date,d.shift,d.start_time,d.end_time,d.status,req.params.id]);await audit(c,req.user.user_id,'DUTY_UPDATED',`Updated duty ${req.params.id}.`)});res.json({success:true,data:{id:Number(req.params.id)}})}));
+router.delete('/:id',...manager,asyncHandler(async(req,res)=>{await transaction(async c=>{const [r]=await c.execute("UPDATE duties SET status='CANCELLED' WHERE id=?",[req.params.id]);if(!r.affectedRows)throw notFound('Duty not found.');await audit(c,req.user.user_id,'DUTY_CANCELLED',`Cancelled duty ${req.params.id}.`)});res.json({success:true,data:{id:Number(req.params.id)}})}));
+export default router;

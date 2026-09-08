@@ -1,49 +1,54 @@
 import { motion } from 'framer-motion';
+import { Clock, Plus, Sun, Moon, Sunset } from 'lucide-react';
 import { fadeUp, staggerContainer } from '../../animations/variants';
-import { PageHeader, Badge, Table } from '../../components/ui';
-import { MOCK_SHIFTS, MOCK_EMPLOYEES } from '../../mock/data';
+import { PageHeader, Button } from '../../components/ui';
 
-const SHIFT_COLORS = { Morning: 'badge-info', Afternoon: 'badge-warning', Night: 'bg-purple-500/15 text-purple-400 border border-purple-500/20' };
+const SHIFTS = [
+    { name: 'Morning Shift', time: '06:00 – 14:00', icon: Sun, color: '#f59e0b', bg: '#fef3c7', border: '#fde68a', workers: 8 },
+    { name: 'Afternoon Shift', time: '14:00 – 22:00', icon: Sunset, color: '#19A7A8', bg: '#E6F7F7', border: '#b2e8e8', workers: 7 },
+    { name: 'Night Shift', time: '22:00 – 06:00', icon: Moon, color: '#6366f1', bg: '#ede9fe', border: '#c4b5fd', workers: 5 },
+];
 
 export default function ShiftManagementPage() {
-    const columns = [
-        { key: 'name', label: 'Shift', render: (v) => <span className={`badge ${SHIFT_COLORS[v] || 'badge-neutral'}`}>{v}</span> },
-        { key: 'startTime', label: 'Start', render: (v) => <span className="font-mono text-gray-200">{v}</span> },
-        { key: 'endTime', label: 'End', render: (v) => <span className="font-mono text-gray-200">{v}</span> },
-        {
-            key: 'id', label: 'Employees', render: (id, row) => {
-                const count = MOCK_EMPLOYEES.filter((e) => e.shift === row.name).length;
-                return <span className="text-teal-400 font-semibold">{count}</span>;
-            }
-        },
-    ];
-
     return (
         <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
             <motion.div variants={fadeUp}>
-                <PageHeader title="Shift Management" subtitle="View and manage depot shift timings" />
+                <PageHeader title="Shift Management" subtitle="Configure and monitor depot shifts"
+                    action={<Button><Plus size={15} /> Add Shift</Button>} />
             </motion.div>
 
-            {/* Shift cards */}
             <motion.div variants={staggerContainer} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {MOCK_SHIFTS.map((s) => {
-                    const empCount = MOCK_EMPLOYEES.filter((e) => e.shift === s.name).length;
-                    const colorMap = { Morning: 'border-teal-500/25 bg-teal-500/5', Afternoon: 'border-amber-400/25 bg-amber-400/5', Night: 'border-purple-500/25 bg-purple-500/5' };
-                    const textMap = { Morning: 'text-teal-400', Afternoon: 'text-amber-400', Night: 'text-purple-400' };
-                    return (
-                        <motion.div key={s.id} variants={fadeUp}
-                            className={`card p-5 border ${colorMap[s.name] || 'border-white/06'}`}>
-                            <p className={`text-2xl font-bold font-outfit ${textMap[s.name] || 'text-gray-300'}`}>{s.name}</p>
-                            <p className="text-sm text-gray-400 mt-1 font-mono">{s.startTime} → {s.endTime}</p>
-                            <p className="text-xs text-gray-500 mt-3">{empCount} employees assigned</p>
-                        </motion.div>
-                    );
-                })}
+                {SHIFTS.map(({ name, time, icon: Icon, color, bg, border, workers }) => (
+                    <motion.div key={name} variants={fadeUp}
+                        whileHover={{ y: -3, boxShadow: '0 8px 24px rgba(18,59,93,0.10)' }}
+                        className="card p-6 transition-all" style={{ borderColor: border, background: bg }}>
+                        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center mb-4"
+                            style={{ boxShadow: '0 2px 8px rgba(18,59,93,0.08)' }}>
+                            <Icon size={22} style={{ color }} />
+                        </div>
+                        <h3 className="font-outfit font-bold text-[#14212B] mb-1">{name}</h3>
+                        <div className="flex items-center gap-1.5 text-sm text-[#6B7E92] mb-3">
+                            <Clock size={13} style={{ color }} />
+                            {time}
+                        </div>
+                        <div className="flex items-center justify-between pt-3 border-t border-[#E5EAF0]">
+                            <span className="text-xs text-[#98A9BB]">{workers} workers</span>
+                            <button className="text-xs font-semibold transition-colors" style={{ color }}>
+                                Edit →
+                            </button>
+                        </div>
+                    </motion.div>
+                ))}
             </motion.div>
 
-            <motion.div variants={fadeUp}>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Shift Details</p>
-                <Table columns={columns} data={MOCK_SHIFTS} />
+            {/* Info note */}
+            <motion.div variants={fadeUp}
+                className="card p-4 flex items-start gap-3 border border-[#E5EAF0] bg-[#F7F9FC]">
+                <Clock size={16} className="text-[#19A7A8] mt-0.5 shrink-0" />
+                <p className="text-sm text-[#6B7E92]">
+                    Shifts are assigned during Duty Allocation. To change the schedule for a specific date, go to
+                    <span className="text-[#19A7A8] font-semibold"> Duty Allocation</span>.
+                </p>
             </motion.div>
         </motion.div>
     );

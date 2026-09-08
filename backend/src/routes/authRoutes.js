@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { login, register } from '../services/authService.js';
+import { requireAuth } from '../middleware/auth.js';
+import { asyncHandler } from '../utils/asyncHandler.js';
+const router=Router();
+router.post('/register', asyncHandler(async (req,res)=>res.status(201).json({success:true,data:await register(req.body)})));
+router.post('/login', asyncHandler(async (req,res)=>res.json({success:true,data:await login(req.body.identifier,req.body.password)})));
+router.get('/me', requireAuth, (req,res)=>res.json({success:true,data:{user:{id:req.user.user_id,employeeId:req.user.employee_id,name:req.user.name,email:req.user.email,phone:req.user.phone,role:req.user.role.toLowerCase().replace('depot_manager','manager'),designation:req.user.designation,depotId:req.user.depot_id}}}));
+router.post('/logout', requireAuth, (_req,res)=>res.json({success:true,data:{message:'Logged out successfully.'}}));
+export default router;

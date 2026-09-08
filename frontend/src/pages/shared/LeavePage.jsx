@@ -1,140 +1,103 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Calendar, Send, AlertCircle } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FileCheck, Plus, Calendar, ArrowRight, CheckCircle, X, Clock } from 'lucide-react';
 import { fadeUp, staggerContainer } from '../../animations/variants';
-import { Button, Alert, PageHeader, Badge } from '../../components/ui';
-import { MOCK_LEAVES, MOCK_LEAVE_BALANCE } from '../../mock/data';
+import { Badge, Button, Modal, Select } from '../../components/ui';
+import { useAuth } from '../../context/AuthContext';
+import { MOCK_LEAVES } from '../../mock/data';
 
-const LEAVE_TYPES = ['Casual Leave', 'Sick Leave', 'Annual Leave'];
+const LEAVE_TYPES = ['Sick Leave', 'Casual Leave', 'Earned Leave', 'Emergency Leave'];
 
 export default function LeavePage() {
     const { user } = useAuth();
-    const balance = MOCK_LEAVE_BALANCE[user?.id] || {};
     const myLeaves = MOCK_LEAVES.filter((l) => l.employeeId === user?.id);
+    const [showApply, setShowApply] = useState(false);
+    const [form, setForm] = useState({ type: 'Sick Leave', from: '', to: '', reason: '' });
 
-    const [form, setForm] = useState({ leaveType: 'Casual Leave', fromDate: '', toDate: '', reason: '' });
-    const [loading, setLoading] = useState(false);
-    const [success, setSuccess] = useState('');
-    const [error, setError] = useState('');
-    const [leaves, setLeaves] = useState(myLeaves);
-
-    const change = (k) => (e) => setForm({ ...form, [k]: e.target.value });
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        if (!form.fromDate || !form.toDate) { setError('Please select dates'); return; }
-        if (form.toDate < form.fromDate) { setError('End date must be after start date'); return; }
-        setError(''); setLoading(true);
-        await delay(800);
-        const newLeave = {
-            id: 'L' + Date.now(),
-            employeeId: user.id, employeeName: user.name,
-            leaveType: form.leaveType, fromDate: form.fromDate, toDate: form.toDate,
-            days: daysBetween(form.fromDate, form.toDate),
-            reason: form.reason, status: 'pending',
-            appliedOn: new Date().toISOString().split('T')[0],
-        };
-        setLeaves([newLeave, ...leaves]);
-        setSuccess(`Leave request submitted for ${newLeave.days} day(s) — awaiting approval`);
-        setForm({ leaveType: 'Casual Leave', fromDate: '', toDate: '', reason: '' });
-        setLoading(false);
-    };
+    const balance = { sick: 5, casual: 8, earned: 12 };
 
     return (
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6 max-w-lg">
-            <motion.div variants={fadeUp}>
-                <PageHeader title="Leave Management" subtitle="Apply and track your leave requests" />
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
+            <motion.div variants={fadeUp} className="flex items-start justify-between gap-4">
+                <div>
+                    <p className="text-[11px] text-[#19A7A8] uppercase tracking-widest font-bold mb-1">Worker</p>
+                    <h1 className="text-2xl font-black font-outfit text-[#14212B]">My Leaves</h1>
+                </div>
+                <Button onClick={() => setShowApply(true)}><Plus size={15} /> Apply Leave</Button>
             </motion.div>
 
             {/* Leave balance */}
-            {Object.keys(balance).length > 0 && (
-                <motion.div variants={fadeUp} className="grid grid-cols-3 gap-3">
-                    {Object.entries(balance).map(([type, b]) => (
-                        <div key={type} className="card p-4 text-center">
-                            <p className="text-2xl font-bold font-outfit text-teal-400">{b.remaining}</p>
-                            <p className="text-xs text-gray-500 mt-1 capitalize">{type}<br />remaining</p>
-                        </div>
-                    ))}
-                </motion.div>
-            )}
-
-            {success && <motion.div variants={fadeUp}><Alert type="success">{success}</Alert></motion.div>}
-            {error && <motion.div variants={fadeUp}><Alert type="danger">{error}</Alert></motion.div>}
-
-            {/* Apply leave form */}
-            <motion.div variants={fadeUp} className="card p-5 border border-white/06">
-                <h2 className="text-base font-semibold font-outfit text-white mb-4">Apply for Leave</h2>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Type */}
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Leave Type</label>
-                        <select className="input-base" value={form.leaveType} onChange={change('leaveType')}
-                            style={{ background: '#1a2847' }}>
-                            {LEAVE_TYPES.map((t) => <option key={t}>{t}</option>)}
-                        </select>
+            <motion.div variants={fadeUp} className="grid grid-cols-3 gap-3">
+                {[
+                    { label: 'Sick', days: balance.sick, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' },
+                    { label: 'Casual', days: balance.casual, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200' },
+                    { label: 'Earned', days: balance.earned, color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200' },
+                ].map((b) => (
+                    <div key={b.label} className={`card p-4 text-center border ${b.border} ${b.bg}`}>
+                        <p className={`text-2xl font-black font-outfit ${b.color}`}>{b.days}</p>
+                        <p className="text-xs text-[#6B7E92] mt-0.5">{b.label} days</p>
                     </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="flex flex-col gap-1">
-                            <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">From</label>
-                            <input type="date" className="input-base" value={form.fromDate} onChange={change('fromDate')}
-                                min={new Date().toISOString().split('T')[0]} style={{ colorScheme: 'dark' }} />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">To</label>
-                            <input type="date" className="input-base" value={form.toDate} onChange={change('toDate')}
-                                min={form.fromDate || new Date().toISOString().split('T')[0]} style={{ colorScheme: 'dark' }} />
-                        </div>
-                    </div>
-
-                    {form.fromDate && form.toDate && form.toDate >= form.fromDate && (
-                        <p className="text-sm text-teal-400">
-                            {daysBetween(form.fromDate, form.toDate)} day(s) selected
-                        </p>
-                    )}
-
-                    <div className="flex flex-col gap-1">
-                        <label className="text-xs font-medium text-gray-400 uppercase tracking-wider">Reason</label>
-                        <textarea className="input-base resize-none h-20" placeholder="Briefly explain your reason…"
-                            value={form.reason} onChange={change('reason')} />
-                    </div>
-
-                    <Button type="submit" variant="primary" size="lg" className="w-full" loading={loading} icon={<Send size={16} />}>
-                        Submit Leave Request
-                    </Button>
-                </form>
+                ))}
             </motion.div>
 
-            {/* My leaves */}
+            {/* Leave history timeline */}
             <motion.div variants={fadeUp}>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">My Leave History</p>
-                {leaves.length === 0
-                    ? <p className="text-sm text-gray-600 text-center py-6">No leave requests yet</p>
-                    : (
-                        <div className="space-y-3">
-                            {leaves.map((l) => (
-                                <div key={l.id} className="card p-4 border border-white/05">
-                                    <div className="flex items-start justify-between mb-1.5">
-                                        <div>
-                                            <p className="text-sm font-semibold text-white">{l.leaveType}</p>
-                                            <p className="text-xs text-gray-400">
-                                                {l.fromDate} → {l.toDate} · {l.days} day(s)
-                                            </p>
-                                        </div>
-                                        <Badge status={l.status} />
+                <p className="text-[10px] font-bold text-[#6B7E92] uppercase tracking-widest mb-3">My Applications</p>
+                {myLeaves.length === 0 ? (
+                    <div className="card p-10 text-center">
+                        <FileCheck size={36} className="mx-auto mb-3 text-[#D0DAE6]" />
+                        <p className="text-[#98A9BB] text-sm">No leave applications yet</p>
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {myLeaves.map((leave) => (
+                            <motion.div key={leave.id} variants={fadeUp} className="card p-4">
+                                <div className="flex items-start gap-3">
+                                    <div className="w-9 h-9 rounded-xl bg-[#E6F7F7] flex items-center justify-center shrink-0">
+                                        <Calendar size={16} className="text-[#19A7A8]" />
                                     </div>
-                                    {l.reason && <p className="text-xs text-gray-500 mt-1">"{l.reason}"</p>}
+                                    <div className="flex-1">
+                                        <div className="flex items-center justify-between">
+                                            <p className="font-semibold text-[#14212B] text-sm">{leave.leaveType}</p>
+                                            <Badge status={leave.status} />
+                                        </div>
+                                        <p className="text-xs text-[#6B7E92] mt-0.5 flex items-center gap-1">
+                                            <Clock size={10} />
+                                            {leave.startDate} → {leave.endDate} · {leave.days} day(s)
+                                        </p>
+                                        {leave.reason && <p className="text-xs text-[#98A9BB] mt-1 italic">"{leave.reason}"</p>}
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
-                    )}
+                            </motion.div>
+                        ))}
+                    </div>
+                )}
             </motion.div>
+
+            {/* Apply modal */}
+            <Modal open={showApply} onClose={() => setShowApply(false)} title="Apply for Leave"
+                footer={<><Button variant="secondary" onClick={() => setShowApply(false)}>Cancel</Button><Button><CheckCircle size={14} /> Submit</Button></>}>
+                <div className="space-y-4">
+                    <Select label="Leave Type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+                        {LEAVE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                    </Select>
+                    <div className="grid grid-cols-2 gap-3">
+                        <div>
+                            <label className="text-xs font-semibold text-[#425466] uppercase tracking-wider block mb-1.5">From</label>
+                            <input type="date" className="input-base" value={form.from} onChange={(e) => setForm({ ...form, from: e.target.value })} />
+                        </div>
+                        <div>
+                            <label className="text-xs font-semibold text-[#425466] uppercase tracking-wider block mb-1.5">To</label>
+                            <input type="date" className="input-base" value={form.to} onChange={(e) => setForm({ ...form, to: e.target.value })} />
+                        </div>
+                    </div>
+                    <div>
+                        <label className="text-xs font-semibold text-[#425466] uppercase tracking-wider block mb-1.5">Reason</label>
+                        <textarea rows={3} className="input-base" placeholder="Brief reason…"
+                            value={form.reason} onChange={(e) => setForm({ ...form, reason: e.target.value })} />
+                    </div>
+                </div>
+            </Modal>
         </motion.div>
     );
-}
-
-function delay(ms) { return new Promise((r) => setTimeout(r, ms)); }
-function daysBetween(from, to) {
-    return Math.max(1, Math.round((new Date(to) - new Date(from)) / 86400000) + 1);
 }

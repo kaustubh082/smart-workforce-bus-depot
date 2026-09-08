@@ -1,50 +1,59 @@
 import { motion } from 'framer-motion';
-import { Bus, MapPin, Clock, Calendar } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { Bus, Clock, MapPin, Calendar } from 'lucide-react';
 import { fadeUp, staggerContainer } from '../../animations/variants';
 import { Badge, PageHeader } from '../../components/ui';
+import { useAuth } from '../../context/AuthContext';
 import { MOCK_DUTIES } from '../../mock/data';
 
 export default function DutyHistoryPage() {
     const { user } = useAuth();
-    const myDuties = MOCK_DUTIES
-        .filter((d) => d.employeeId === user?.id)
-        .sort((a, b) => b.date.localeCompare(a.date));
+    const history = MOCK_DUTIES.filter((d) =>
+        d.employeeId === user?.id || d.driverName === user?.name || d.conductorName === user?.name
+    ).sort((a, b) => b.date.localeCompare(a.date));
 
     return (
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6 max-w-lg">
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
             <motion.div variants={fadeUp}>
-                <PageHeader title="Duty History" subtitle="All your past and upcoming duty assignments" />
+                <PageHeader title="Duty History" subtitle={`${history.length} total assignments`} />
             </motion.div>
 
-            {myDuties.length === 0 ? (
-                <motion.div variants={fadeUp} className="card p-10 text-center border border-white/05">
-                    <Bus size={32} className="text-gray-600 mx-auto mb-2" />
-                    <p className="text-gray-500">No duty history found</p>
+            {history.length === 0 ? (
+                <motion.div variants={fadeUp} className="card p-12 text-center">
+                    <Calendar size={36} className="mx-auto mb-3 text-[#D0DAE6]" />
+                    <p className="text-[#98A9BB] text-sm">No duty history found</p>
                 </motion.div>
             ) : (
-                <div className="space-y-3">
-                    {myDuties.map((d, i) => (
-                        <motion.div key={d.id} variants={fadeUp} custom={i}
-                            className="card p-5 border border-white/05 hover:border-teal-500/15 transition-colors">
+                <motion.div variants={staggerContainer} className="space-y-3">
+                    {history.map((duty) => (
+                        <motion.div key={duty.id} variants={fadeUp}
+                            whileHover={{ y: -1, boxShadow: '0 4px 14px rgba(18,59,93,0.08)' }}
+                            className="card p-4 transition-all">
                             <div className="flex items-start justify-between mb-3">
                                 <div>
-                                    <p className="text-base font-semibold font-outfit text-white">Route {d.routeNo}</p>
-                                    <div className="flex items-center gap-1.5 mt-0.5 text-sm text-gray-400">
-                                        <MapPin size={13} className="text-gray-500" />
-                                        {d.routeFrom} → {d.routeTo}
-                                    </div>
+                                    <p className="text-[10px] text-[#98A9BB] uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1">
+                                        <Calendar size={9} /> {duty.date}
+                                    </p>
+                                    <h3 className="font-outfit font-bold text-[#14212B]">Route {duty.routeNo}</h3>
                                 </div>
-                                <Badge status={d.status} />
+                                <Badge status={duty.status} />
                             </div>
-                            <div className="flex flex-wrap items-center gap-4 text-xs text-gray-500">
-                                <span className="flex items-center gap-1.5"><Calendar size={12} />{d.date}</span>
-                                <span className="flex items-center gap-1.5"><Clock size={12} />{d.startTime} – {d.endTime}</span>
-                                <span className="flex items-center gap-1.5"><Bus size={12} />{d.busReg}</span>
+                            <div className="grid grid-cols-3 gap-3 text-xs">
+                                <div className="flex items-center gap-1.5 text-[#6B7E92]">
+                                    <Bus size={11} className="text-[#19A7A8]" />
+                                    <span>{duty.busReg}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-[#6B7E92]">
+                                    <Clock size={11} className="text-amber-500" />
+                                    <span>{duty.startTime}–{duty.endTime}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-[#6B7E92]">
+                                    <MapPin size={11} className="text-[#2D8CFF]" />
+                                    <span className="truncate">{duty.routeFrom}→{duty.routeTo}</span>
+                                </div>
                             </div>
                         </motion.div>
                     ))}
-                </div>
+                </motion.div>
             )}
         </motion.div>
     );

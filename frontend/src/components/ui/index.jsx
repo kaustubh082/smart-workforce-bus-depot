@@ -1,144 +1,112 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, AlertCircle, CheckCircle, Info, AlertTriangle } from 'lucide-react';
-import { tapScale } from '../../animations/variants';
+import { forwardRef } from 'react';
 
-// =========================================
-// Button
-// =========================================
-const btnBase = 'inline-flex items-center justify-center gap-2 font-semibold rounded-btn transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
-
-const btnVariants = {
-    primary: 'bg-teal-500 hover:bg-teal-600 text-white focus:ring-teal-400 shadow-teal-glow',
-    secondary: 'bg-surface-100 hover:bg-surface-200 text-navy-900 border border-surface-300 focus:ring-teal-400',
-    danger: 'bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 focus:ring-red-400',
-    ghost: 'bg-transparent hover:bg-surface-100 text-navy-700 focus:ring-teal-400',
-    outline: 'bg-transparent border border-teal-500/60 text-teal-600 hover:bg-teal-50 focus:ring-teal-400',
-};
-
-const btnSizes = {
-    sm: 'px-3 py-1.5 text-xs',
-    md: 'px-4 py-2.5 text-sm',
-    lg: 'px-6 py-3 text-base',
-    xl: 'px-8 py-4 text-lg',
-};
-
-export function Button({ variant = 'primary', size = 'md', children, className = '', loading, icon, ...props }) {
+/* ── Button ──────────────────────────────────────── */
+export function Button({ children, variant = 'primary', size = 'md', loading, disabled, className = '', ...props }) {
+    const base = 'inline-flex items-center justify-center gap-2 font-semibold rounded-btn transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed select-none';
+    const sizes = { sm: 'px-3 py-1.5 text-xs', md: 'px-5 py-2.5 text-sm', lg: 'px-7 py-3 text-base' };
+    const variants = {
+        primary: 'bg-gradient-to-r from-[#19A7A8] to-[#2D8CFF] text-white hover:shadow-[0_4px_16px_rgba(25,167,168,0.35)] hover:-translate-y-0.5',
+        secondary: 'bg-white border border-[#E5EAF0] text-[#14212B] hover:border-[#19A7A8] hover:text-[#19A7A8] hover:bg-[#E6F7F7]',
+        danger: 'bg-red-500 text-white hover:bg-red-600',
+        ghost: 'bg-transparent text-[#19A7A8] hover:bg-[#E6F7F7]',
+        navy: 'bg-[#123B5D] text-white hover:bg-[#176B87]',
+    };
     return (
-        <motion.button
-            whileTap={tapScale}
-            className={`${btnBase} ${btnVariants[variant]} ${btnSizes[size]} ${className}`}
-            disabled={loading || props.disabled}
-            {...props}
-        >
-            {loading ? (
-                <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
-            ) : icon}
+        <motion.button whileTap={{ scale: 0.97 }} disabled={disabled || loading}
+            className={`${base} ${sizes[size]} ${variants[variant]} ${className}`} {...props}>
+            {loading && <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />}
             {children}
         </motion.button>
     );
 }
 
-// =========================================
-// Card
-// =========================================
-export function Card({ children, className = '', hover = false, glow = false, onClick }) {
-    const base = `card ${hover ? 'card-hover cursor-pointer' : ''} ${glow ? 'teal-glow' : ''}`;
-    if (onClick || hover) {
-        return (
-            <motion.div className={`${base} ${className}`}
-                whileHover={{ y: -3, boxShadow: '0 6px 24px rgba(0,0,0,0.10)' }}
-                onClick={onClick}>
-                {children}
-            </motion.div>
-        );
-    }
-    return <div className={`${base} ${className}`}>{children}</div>;
-}
-
-// =========================================
-// Badge
-// =========================================
-const badgeMap = {
-    success: 'badge-success', danger: 'badge-danger', warning: 'badge-warning',
-    info: 'badge-info', neutral: 'badge-neutral',
-    active: 'badge-success', inactive: 'badge-neutral', 'on-leave': 'badge-warning',
-    operational: 'badge-success', maintenance: 'badge-warning', 'out-of-service': 'badge-danger',
-    pending: 'badge-warning', approved: 'badge-success', rejected: 'badge-danger',
-    present: 'badge-success', absent: 'badge-danger', scheduled: 'badge-info', completed: 'badge-neutral',
-};
-
-export function Badge({ status, children, className = '' }) {
-    const cls = badgeMap[status?.toLowerCase()] || 'badge-neutral';
-    return <span className={`badge ${cls} ${className}`}>{children ?? status}</span>;
-}
-
-// =========================================
-// Input
-// =========================================
-export function Input({ label, error, icon, className = '', ...props }) {
-    return (
-        <div className="flex flex-col gap-1">
-            {label && <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</label>}
-            <div className="relative">
-                {icon && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">{icon}</span>}
-                <input
-                    className={`input-base ${icon ? 'pl-10' : ''} ${error ? '!border-red-400 focus:!border-red-500' : ''} ${className}`}
-                    {...props}
-                />
-            </div>
-            {error && <p className="text-xs text-red-500 flex items-center gap-1"><AlertCircle size={12} />{error}</p>}
-        </div>
+/* ── Card ────────────────────────────────────────── */
+export function Card({ children, className = '', hover = false, accent, onClick }) {
+    const base = 'card';
+    const hoverCls = hover ? 'card-hover cursor-pointer' : '';
+    const accentCls = accent ? 'stat-card-accent' : '';
+    return onClick ? (
+        <motion.div whileHover={hover ? { y: -3 } : {}} whileTap={hover ? { scale: 0.98 } : {}}
+            onClick={onClick} className={`${base} ${hoverCls} ${accentCls} ${className}`}>
+            {children}
+        </motion.div>
+    ) : (
+        <div className={`${base} ${hoverCls} ${accentCls} ${className}`}>{children}</div>
     );
 }
 
-// =========================================
-// Select
-// =========================================
-export function Select({ label, error, options = [], className = '', ...props }) {
+/* ── Badge ───────────────────────────────────────── */
+export function Badge({ status, label, className = '' }) {
+    const map = {
+        present: 'badge-success', active: 'badge-success', approved: 'badge-success', operational: 'badge-success',
+        absent: 'badge-danger', inactive: 'badge-danger', rejected: 'badge-danger', 'out-of-service': 'badge-danger',
+        pending: 'badge-warning', leave: 'badge-warning', maintenance: 'badge-warning', late: 'badge-warning',
+        assigned: 'badge-info', 'on-duty': 'badge-info',
+        default: 'badge-neutral',
+    };
+    const cls = map[(status || '').toLowerCase()] || map.default;
+    const text = label || (status ? status.charAt(0).toUpperCase() + status.slice(1) : '');
+    return <span className={`badge ${cls} ${className}`}>{text}</span>;
+}
+
+/* ── Input ───────────────────────────────────────── */
+export const Input = forwardRef(function Input({ label, error, icon: Icon, className = '', ...props }, ref) {
     return (
         <div className="flex flex-col gap-1">
-            {label && <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</label>}
-            <select
-                className={`input-base appearance-none ${error ? 'border-red-400' : ''} ${className}`}
-                {...props}
-            >
-                {options.map((opt) => (
-                    <option key={opt.value ?? opt} value={opt.value ?? opt}>
-                        {opt.label ?? opt}
-                    </option>
-                ))}
+            {label && <label className="text-xs font-semibold text-[#425466] uppercase tracking-wider">{label}</label>}
+            <div className="relative group">
+                {Icon && <Icon size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#98A9BB] group-focus-within:text-[#19A7A8] transition-colors" />}
+                <input ref={ref}
+                    className={`input-base ${Icon ? 'pl-10' : ''} ${error ? 'error' : ''} ${className}`}
+                    {...props} />
+            </div>
+            <AnimatePresence>
+                {error && (
+                    <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                        className="text-xs text-red-500">{error}
+                    </motion.p>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+});
+
+/* ── Select ──────────────────────────────────────── */
+export function Select({ label, error, children, className = '', ...props }) {
+    return (
+        <div className="flex flex-col gap-1">
+            {label && <label className="text-xs font-semibold text-[#425466] uppercase tracking-wider">{label}</label>}
+            <select className={`input-base bg-white ${error ? 'error' : ''} ${className}`} {...props}>
+                {children}
             </select>
             {error && <p className="text-xs text-red-500">{error}</p>}
         </div>
     );
 }
 
-// =========================================
-// Modal
-// =========================================
-export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
-    const sizeMap = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' };
+/* ── Modal ───────────────────────────────────────── */
+export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
+    const sizes = { sm: 'max-w-md', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl' };
     return (
         <AnimatePresence>
-            {isOpen && (
+            {open && (
                 <motion.div className="fixed inset-0 z-50 flex items-center justify-center p-4"
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-                    <motion.div className={`relative w-full ${sizeMap[size]} bg-white border border-surface-200 rounded-card shadow-modal overflow-hidden`}
-                        initial={{ opacity: 0, scale: 0.92, y: 16 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 8 }}
-                        transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}>
-                        <div className="flex items-center justify-between p-5 border-b border-surface-200">
-                            <h3 className="text-lg font-semibold text-navy-900">{title}</h3>
-                            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-surface-100 text-slate-400 hover:text-slate-600 transition-colors">
-                                <X size={18} />
-                            </button>
-                        </div>
-                        <div className="p-5">{children}</div>
+                    <motion.div className={`relative z-10 w-full ${sizes[size]} bg-white rounded-2xl shadow-[0_20px_60px_rgba(18,59,93,0.18)] overflow-hidden`}
+                        initial={{ scale: 0.94, y: 20, opacity: 0 }}
+                        animate={{ scale: 1, y: 0, opacity: 1 }}
+                        exit={{ scale: 0.94, y: 10, opacity: 0 }}
+                        transition={{ duration: 0.25 }}>
+                        {title && (
+                            <div className="px-6 py-4 border-b border-[#E5EAF0] flex items-center justify-between">
+                                <h3 className="font-outfit font-bold text-[#14212B] text-lg">{title}</h3>
+                                <button onClick={onClose} className="p-1.5 rounded-lg text-[#98A9BB] hover:text-[#425466] hover:bg-[#F7F9FC] transition-all">✕</button>
+                            </div>
+                        )}
+                        <div className="p-6">{children}</div>
+                        {footer && <div className="px-6 py-4 border-t border-[#E5EAF0] flex justify-end gap-3">{footer}</div>}
                     </motion.div>
                 </motion.div>
             )}
@@ -146,37 +114,32 @@ export function Modal({ isOpen, onClose, title, children, size = 'md' }) {
     );
 }
 
-// =========================================
-// Alert
-// =========================================
-const alertMap = {
-    success: { cls: 'bg-green-50 border-green-200 text-green-800', Icon: CheckCircle },
-    danger: { cls: 'bg-red-50 border-red-200 text-red-700', Icon: AlertCircle },
-    warning: { cls: 'bg-amber-50 border-amber-200 text-amber-800', Icon: AlertTriangle },
-    info: { cls: 'bg-teal-50 border-teal-200 text-teal-800', Icon: Info },
-};
-
+/* ── Alert ───────────────────────────────────────── */
 export function Alert({ type = 'info', children }) {
-    const { cls, Icon } = alertMap[type] || alertMap.info;
+    const map = {
+        info: { cls: 'bg-[#E6F7F7] border-[#b2e8e8] text-[#178F90]', dot: 'bg-[#19A7A8]' },
+        success: { cls: 'bg-green-50 border-green-200 text-green-800', dot: 'bg-green-500' },
+        warning: { cls: 'bg-amber-50 border-amber-200 text-amber-800', dot: 'bg-amber-500' },
+        danger: { cls: 'bg-red-50 border-red-200 text-red-800', dot: 'bg-red-500' },
+    };
+    const { cls, dot } = map[type] || map.info;
     return (
-        <div className={`flex items-start gap-3 p-4 rounded-card border text-sm ${cls}`}>
-            <Icon size={16} className="mt-0.5 shrink-0" />
-            <div>{children}</div>
+        <div className={`flex items-start gap-3 p-4 rounded-xl border ${cls}`}>
+            <span className={`mt-1.5 w-2 h-2 rounded-full ${dot} shrink-0`} />
+            <div className="text-sm">{children}</div>
         </div>
     );
 }
 
-// =========================================
-// Table
-// =========================================
-export function Table({ columns, data, emptyText = 'No records found' }) {
+/* ── Table ───────────────────────────────────────── */
+export function Table({ columns, data, emptyText = 'No data found' }) {
     return (
-        <div className="overflow-x-auto rounded-card border border-surface-200 shadow-soft">
+        <div className="overflow-x-auto">
             <table className="w-full text-sm">
                 <thead>
-                    <tr className="bg-surface-50 border-b border-surface-200">
+                    <tr className="border-b border-[#E5EAF0]">
                         {columns.map((col) => (
-                            <th key={col.key} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                            <th key={col.key} className="text-left py-3 px-4 text-[10px] font-bold text-[#6B7E92] uppercase tracking-wider">
                                 {col.label}
                             </th>
                         ))}
@@ -184,111 +147,82 @@ export function Table({ columns, data, emptyText = 'No records found' }) {
                 </thead>
                 <tbody>
                     {data.length === 0 ? (
-                        <tr><td colSpan={columns.length} className="px-4 py-10 text-center text-slate-400">{emptyText}</td></tr>
-                    ) : data.map((row, i) => (
-                        <tr key={row.id ?? i} className="border-b border-surface-100 hover:bg-surface-50 transition-colors">
-                            {columns.map((col) => (
-                                <td key={col.key} className="px-4 py-3 text-navy-800 whitespace-nowrap">
-                                    {col.render ? col.render(row[col.key], row) : row[col.key] ?? '—'}
-                                </td>
-                            ))}
-                        </tr>
-                    ))}
+                        <tr><td colSpan={columns.length} className="text-center py-8 text-[#98A9BB]">{emptyText}</td></tr>
+                    ) : (
+                        data.map((row, i) => (
+                            <tr key={i} className="border-b border-[#F7F9FC] table-row-hover transition-colors">
+                                {columns.map((col) => (
+                                    <td key={col.key} className="py-3 px-4 text-[#14212B]">
+                                        {col.render ? col.render(row[col.key], row) : row[col.key]}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))
+                    )}
                 </tbody>
             </table>
         </div>
     );
 }
 
-// =========================================
-// Skeleton
-// =========================================
-export function Skeleton({ className = '' }) {
-    return <div className={`bg-surface-200 animate-pulse rounded-lg ${className}`} />;
-}
-export function SkeletonCard() {
-    return (
-        <div className="card p-5 space-y-3">
-            <Skeleton className="h-4 w-2/5" />
-            <Skeleton className="h-8 w-1/3" />
-            <Skeleton className="h-3 w-3/5" />
-        </div>
-    );
-}
+/* ── StatCard ────────────────────────────────────── */
+const statColors = {
+    teal: { icon: 'bg-[#E6F7F7] text-[#19A7A8]', value: 'text-[#19A7A8]' },
+    blue: { icon: 'bg-[#E8F2FF] text-[#2D8CFF]', value: 'text-[#2D8CFF]' },
+    green: { icon: 'bg-green-50 text-green-600', value: 'text-green-600' },
+    amber: { icon: 'bg-amber-50 text-amber-600', value: 'text-amber-600' },
+    navy: { icon: 'bg-[#EEF2F7] text-[#123B5D]', value: 'text-[#123B5D]' },
+};
 
-// =========================================
-// StatCard
-// =========================================
-export function StatCard({ label, value, change, icon: Icon, color = 'teal', suffix = '', onClick }) {
-    const colorMap = {
-        teal: { bg: 'bg-teal-50', text: 'text-teal-600', icon: 'text-teal-500', border: 'border-teal-100' },
-        amber: { bg: 'bg-amber-50', text: 'text-amber-700', icon: 'text-amber-500', border: 'border-amber-100' },
-        green: { bg: 'bg-green-50', text: 'text-green-700', icon: 'text-green-500', border: 'border-green-100' },
-        red: { bg: 'bg-red-50', text: 'text-red-700', icon: 'text-red-500', border: 'border-red-100' },
-        blue: { bg: 'bg-blue-50', text: 'text-blue-700', icon: 'text-blue-500', border: 'border-blue-100' },
-    };
-    const c = colorMap[color] || colorMap.teal;
+export function StatCard({ label, value, icon: Icon, color = 'teal', suffix = '', change, accent = true }) {
+    const c = statColors[color] || statColors.teal;
     return (
-        <motion.div whileHover={{ y: -3, boxShadow: '0 6px 24px rgba(0,0,0,0.10)' }}
-            onClick={onClick}
-            className={`card p-5 border ${c.border} ${onClick ? 'cursor-pointer' : ''}`}>
+        <div className={`card p-5 ${accent ? 'stat-card-accent' : ''}`}>
             <div className="flex items-start justify-between mb-3">
-                <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{label}</p>
-                {Icon && <div className={`p-2 rounded-lg ${c.bg}`}><Icon size={18} className={c.icon} /></div>}
+                <p className="text-[10px] font-bold text-[#6B7E92] uppercase tracking-wider">{label}</p>
+                {Icon && <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${c.icon}`}><Icon size={17} /></div>}
             </div>
-            <p className={`text-3xl font-bold font-outfit ${c.text}`}>{value}{suffix}</p>
-            {change && <p className="text-xs text-slate-400 mt-1">{change}</p>}
-        </motion.div>
-    );
-}
-
-// =========================================
-// PageHeader
-// =========================================
-export function PageHeader({ title, subtitle, actions }) {
-    return (
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-            <div>
-                <h1 className="text-2xl font-bold text-navy-900 font-outfit">{title}</h1>
-                {subtitle && <p className="text-sm text-slate-500 mt-0.5">{subtitle}</p>}
-            </div>
-            {actions && <div className="flex items-center gap-2 flex-wrap">{actions}</div>}
+            <p className={`font-outfit font-black text-3xl ${c.value}`}>{value}{suffix}</p>
+            {change && <p className="text-xs text-[#98A9BB] mt-1">{change}</p>}
         </div>
     );
 }
 
-// =========================================
-// EmptyState
-// =========================================
-export function EmptyState({ icon: Icon, title, description, action }) {
+/* ── PageHeader ──────────────────────────────────── */
+export function PageHeader({ title, subtitle, action }) {
     return (
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-            {Icon && <div className="p-4 bg-surface-100 rounded-full mb-4"><Icon size={28} className="text-slate-400" /></div>}
-            <p className="text-lg font-semibold text-navy-800 mb-1">{title}</p>
-            {description && <p className="text-sm text-slate-500 mb-4 max-w-xs">{description}</p>}
+        <div className="flex items-start justify-between gap-4">
+            <div>
+                <h1 className="font-outfit font-black text-[#14212B] text-2xl">{title}</h1>
+                {subtitle && <p className="text-sm text-[#6B7E92] mt-0.5">{subtitle}</p>}
+            </div>
             {action}
         </div>
     );
 }
 
-// =========================================
-// Divider
-// =========================================
-export function Divider({ className = '' }) {
-    return <hr className={`section-divider my-6 ${className}`} />;
+/* ── EmptyState ──────────────────────────────────── */
+export function EmptyState({ icon: Icon, title, desc }) {
+    return (
+        <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+            {Icon && <div className="w-14 h-14 rounded-2xl bg-[#EEF2F7] flex items-center justify-center"><Icon size={26} className="text-[#98A9BB]" /></div>}
+            <p className="font-semibold text-[#425466]">{title}</p>
+            {desc && <p className="text-sm text-[#98A9BB] max-w-xs">{desc}</p>}
+        </div>
+    );
 }
 
-// =========================================
-// Toggle
-// =========================================
+/* ── Toggle ──────────────────────────────────────── */
 export function Toggle({ checked, onChange, label }) {
     return (
-        <label className="flex items-center gap-3 cursor-pointer">
+        <label className="flex items-center gap-3 cursor-pointer select-none">
             <div onClick={() => onChange(!checked)}
-                className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${checked ? 'bg-teal-500' : 'bg-surface-300'}`}>
-                <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
+                className={`relative w-10 h-5.5 rounded-full transition-colors ${checked ? 'bg-[#19A7A8]' : 'bg-[#D0DAE6]'}`}
+                style={{ height: 22 }}>
+                <motion.div animate={{ x: checked ? 18 : 2 }} transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                    className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm" />
             </div>
-            {label && <span className="text-sm text-navy-700">{label}</span>}
+            {label && <span className="text-sm text-[#425466]">{label}</span>}
         </label>
     );
 }

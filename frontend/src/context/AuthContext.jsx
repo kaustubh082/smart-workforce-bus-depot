@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback } from 'react';
-import { MOCK_USERS } from '../mock/data';
+import { api } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -14,42 +14,26 @@ export function AuthProvider({ children }) {
         }
     });
 
-    const login = useCallback(async (email, password) => {
-        // TODO: Replace with API call — POST /api/auth/login
-        const found = MOCK_USERS.find(
-            (u) => u.email === email && u.password === password
-        );
-        if (!found) {
-            throw new Error('Invalid email or password');
-        }
-        const { password: _, ...safeUser } = found; // strip password before storing
+    const login = useCallback(async (identifier, password) => {
+        const { user: safeUser, token } = await api('/auth/login', { method: 'POST', body: JSON.stringify({ identifier, password }) });
         setUser(safeUser);
         localStorage.setItem('depot_user', JSON.stringify(safeUser));
+        localStorage.setItem('depot_token', token);
         return safeUser;
     }, []);
 
-    const signup = useCallback(async ({ name, email, password, role }) => {
-        // TODO: Replace with API call — POST /api/auth/signup
-        const exists = MOCK_USERS.find((u) => u.email === email);
-        if (exists) throw new Error('Email already registered');
-        const newUser = {
-            id: String(Date.now()),
-            name,
-            email,
-            role: role || 'driver',
-            employeeId: 'TEMP-' + Math.floor(Math.random() * 1000),
-            depot: 'Central Bus Depot, Pune',
-            joinedDate: new Date().toISOString().split('T')[0],
-            avatar: null,
-        };
+    const signup = useCallback(async ({ name, email, employeeId, mobile, password, confirmPassword, role }) => {
+        const { user: newUser, token } = await api('/auth/register', { method: 'POST', body: JSON.stringify({ name, email, employeeId, phone: mobile, password, confirmPassword, role }) });
         setUser(newUser);
         localStorage.setItem('depot_user', JSON.stringify(newUser));
+        localStorage.setItem('depot_token', token);
         return newUser;
     }, []);
 
     const logout = useCallback(() => {
         setUser(null);
         localStorage.removeItem('depot_user');
+        localStorage.removeItem('depot_token');
     }, []);
 
     const isManager = user?.role === 'manager';

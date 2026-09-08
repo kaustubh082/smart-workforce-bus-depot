@@ -1,76 +1,63 @@
 import { motion } from 'framer-motion';
-import { Bell, CheckCheck } from 'lucide-react';
-import { useState } from 'react';
-import { useAuth } from '../../context/AuthContext';
+import { Bell, CheckCircle } from 'lucide-react';
 import { fadeUp, staggerContainer } from '../../animations/variants';
-import { PageHeader, Button } from '../../components/ui';
+import { useAuth } from '../../context/AuthContext';
 import { MOCK_NOTIFICATIONS } from '../../mock/data';
 
-const TYPE_COLOR = {
-    duty: 'bg-teal-500/15 text-teal-400',
-    leave: 'bg-amber-400/15 text-amber-400',
-    info: 'bg-blue-500/15 text-blue-400',
-    alert: 'bg-danger/15 text-red-400',
+const TYPE_STYLE = {
+    info: { dot: 'bg-[#19A7A8]', bg: '#E6F7F7', border: '#b2e8e8' },
+    success: { dot: 'bg-green-500', bg: '#d1fae5', border: '#a7f3d0' },
+    warning: { dot: 'bg-amber-400', bg: '#fef3c7', border: '#fde68a' },
+    danger: { dot: 'bg-red-500', bg: '#fee2e2', border: '#fecaca' },
 };
 
 export default function NotificationsPage() {
     const { user } = useAuth();
-    const myAll = MOCK_NOTIFICATIONS.filter((n) => n.userId === user?.id);
-    const [notifications, setNotifications] = useState(myAll);
-
-    const markAll = () => setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-    const markOne = (id) => setNotifications((prev) => prev.map((n) => n.id === id ? { ...n, isRead: true } : n));
-
-    const unread = notifications.filter((n) => !n.isRead).length;
+    const notifs = MOCK_NOTIFICATIONS.filter((n) => n.userId === user?.id);
+    const unread = notifs.filter((n) => !n.isRead).length;
 
     return (
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6 max-w-lg">
-            <motion.div variants={fadeUp}>
-                <PageHeader
-                    title="Notifications"
-                    subtitle={`${unread} unread`}
-                    actions={unread > 0 && (
-                        <Button variant="ghost" size="sm" icon={<CheckCheck size={14} />} onClick={markAll}>
-                            Mark all read
-                        </Button>
-                    )}
-                />
+        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
+            <motion.div variants={fadeUp} className="flex items-start justify-between">
+                <div>
+                    <p className="text-[11px] text-[#19A7A8] uppercase tracking-widest font-bold mb-1">Inbox</p>
+                    <h1 className="text-2xl font-black font-outfit text-[#14212B]">Notifications</h1>
+                    {unread > 0 && <p className="text-sm text-[#6B7E92] mt-0.5">{unread} unread</p>}
+                </div>
+                {unread > 0 && (
+                    <button className="text-xs font-semibold text-[#19A7A8] hover:text-[#178F90] flex items-center gap-1 transition-colors">
+                        <CheckCircle size={13} /> Mark all read
+                    </button>
+                )}
             </motion.div>
 
-            {notifications.length === 0 ? (
-                <motion.div variants={fadeUp} className="card p-10 text-center border border-white/05">
-                    <Bell size={30} className="text-gray-600 mx-auto mb-2" />
-                    <p className="text-gray-500">No notifications</p>
+            {notifs.length === 0 ? (
+                <motion.div variants={fadeUp} className="card p-12 text-center">
+                    <Bell size={36} className="mx-auto mb-3 text-[#D0DAE6]" />
+                    <p className="text-[#98A9BB] text-sm">No notifications yet</p>
                 </motion.div>
             ) : (
-                <div className="space-y-2">
-                    {notifications.map((n, i) => (
-                        <motion.div key={n.id} variants={fadeUp} custom={i}
-                            onClick={() => markOne(n.id)}
-                            className={`card p-4 border cursor-pointer transition-all ${n.isRead ? 'border-white/04 opacity-60' : 'border-white/08 hover:border-teal-500/20'
-                                }`}
-                        >
-                            <div className="flex items-start gap-3">
-                                <span className={`mt-0.5 px-2 py-0.5 rounded text-[10px] font-semibold uppercase ${TYPE_COLOR[n.type] || TYPE_COLOR.info}`}>
-                                    {n.type}
-                                </span>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <p className={`text-sm font-semibold ${n.isRead ? 'text-gray-400' : 'text-white'}`}>{n.title}</p>
-                                        {!n.isRead && <span className="w-2 h-2 bg-teal-400 rounded-full shrink-0" />}
-                                    </div>
-                                    <p className="text-xs text-gray-500 mt-0.5">{n.body}</p>
-                                    <p className="text-[10px] text-gray-600 mt-1">{formatTime(n.createdAt)}</p>
+                <motion.div variants={staggerContainer} className="space-y-2">
+                    {notifs.map((n) => {
+                        const s = TYPE_STYLE[n.type] || TYPE_STYLE.info;
+                        return (
+                            <motion.div key={n.id} variants={fadeUp}
+                                className="card p-4 flex items-start gap-3 cursor-pointer transition-all"
+                                style={!n.isRead ? { borderColor: s.border, background: s.bg } : {}}
+                                whileHover={{ y: -1, boxShadow: '0 4px 14px rgba(18,59,93,0.08)' }}>
+                                <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${s.dot} ${n.isRead ? 'opacity-30' : ''}`} />
+                                <div className="flex-1">
+                                    <p className={`text-sm font-semibold ${n.isRead ? 'text-[#6B7E92]' : 'text-[#14212B]'}`}>{n.title}</p>
+                                    <p className="text-xs text-[#98A9BB] mt-0.5">{n.body}</p>
                                 </div>
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
+                                {!n.isRead && (
+                                    <span className="w-2 h-2 rounded-full bg-[#19A7A8] shrink-0 mt-1.5" />
+                                )}
+                            </motion.div>
+                        );
+                    })}
+                </motion.div>
             )}
         </motion.div>
     );
-}
-
-function formatTime(iso) {
-    return new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 }

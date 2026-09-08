@@ -231,6 +231,7 @@ function SignupPanel() {
                 email: `${form.employeeId.toLowerCase()}@depot.com`,
                 name: form.name, role: form.role, password: form.password,
                 employeeId: form.employeeId.toUpperCase(),
+                mobile: form.mobile, confirmPassword: form.confirm,
             });
             navigate(ROLE_DASH[user.role] || '/');
         } catch (err) {

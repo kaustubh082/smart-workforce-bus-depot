@@ -175,9 +175,9 @@ function AuthPanel() {
     const [shakeKey, setShakeKey] = useState(0);
 
     const QUICK = [
-        { label: 'Manager', email: 'manager@depot.com', password: 'manager123' },
-        { label: 'Driver', email: 'driver@depot.com', password: 'driver123' },
-        { label: 'Conductor', email: 'conductor@depot.com', password: 'conductor123' },
+        { label: 'Manager', email: 'manager@busworkforce.demo', password: 'password' },
+        { label: 'Driver', email: 'driver1@busworkforce.demo', password: 'password' },
+        { label: 'Conductor', email: 'conductor1@busworkforce.demo', password: 'password' },
     ];
 
     const doLogin = async (email, password) => {

@@ -1,77 +1,67 @@
-import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Wrench } from 'lucide-react';
+import { Bus, Plus, Wrench, CheckCircle, XCircle } from 'lucide-react';
 import { fadeUp, staggerContainer } from '../../animations/variants';
-import { Badge, PageHeader, Button, Table, Modal, Input, Select } from '../../components/ui';
+import { PageHeader, Badge, Button } from '../../components/ui';
 import { MOCK_BUSES } from '../../mock/data';
 
-const STATUS_OPTIONS = [
-    { value: 'operational', label: 'Operational' },
-    { value: 'maintenance', label: 'Maintenance' },
-    { value: 'out-of-service', label: 'Out of Service' },
-];
+const STATUS_ICONS = {
+    operational: { Ic: CheckCircle, color: 'text-green-500', bg: 'bg-green-50', border: 'border-green-200' },
+    maintenance: { Ic: Wrench, color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-200' },
+    'out-of-service': { Ic: XCircle, color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-200' },
+};
 
 export default function BusManagementPage() {
-    const [buses, setBuses] = useState(MOCK_BUSES);
-    const [modal, setModal] = useState(false);
-    const [form, setForm] = useState({ regNo: '', model: '', capacity: '', status: 'operational' });
-
-    const addBus = () => {
-        setBuses([{ id: 'B' + Date.now(), ...form, km: 0, lastMaintenance: new Date().toISOString().split('T')[0], route: '—' }, ...buses]);
-        setModal(false);
-        setForm({ regNo: '', model: '', capacity: '', status: 'operational' });
-    };
-
-    const columns = [
-        { key: 'regNo', label: 'Reg. No.', render: (v) => <span className="font-mono text-sm text-teal-400">{v}</span> },
-        { key: 'model', label: 'Model', render: (v) => <span className="text-gray-200">{v}</span> },
-        { key: 'capacity', label: 'Capacity', render: (v) => <span className="text-gray-400">{v} seats</span> },
-        { key: 'status', label: 'Status', render: (v) => <Badge status={v} /> },
-        { key: 'route', label: 'Route', render: (v) => <span className="text-gray-400">{v}</span> },
-        { key: 'lastMaintenance', label: 'Last Maint.', render: (v) => <span className="text-xs text-gray-500">{v}</span> },
-        { key: 'km', label: 'Km', render: (v) => <span className="text-xs font-mono text-gray-500">{Number(v).toLocaleString()}</span> },
-    ];
-
-    const status = { operational: 0, maintenance: 0, 'out-of-service': 0 };
-    buses.forEach((b) => { if (status[b.status] !== undefined) status[b.status]++; });
+    const operational = MOCK_BUSES.filter(b => b.status === 'operational').length;
+    const maintenance = MOCK_BUSES.filter(b => b.status === 'maintenance').length;
+    const outOfService = MOCK_BUSES.filter(b => b.status === 'out-of-service').length;
 
     return (
         <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
             <motion.div variants={fadeUp}>
                 <PageHeader title="Bus Fleet"
-                    subtitle={`${buses.length} total · ${status.operational} operational`}
-                    actions={<Button variant="primary" size="md" icon={<Plus size={16} />} onClick={() => setModal(true)}>Add Bus</Button>}
-                />
+                    subtitle={`${MOCK_BUSES.length} buses · ${operational} operational`}
+                    action={<Button><Plus size={15} /> Add Bus</Button>} />
             </motion.div>
 
-            {/* Status pills */}
-            <motion.div variants={fadeUp} className="flex flex-wrap gap-3">
-                {Object.entries(status).map(([s, n]) => (
-                    <div key={s} className="flex items-center gap-2 px-3 py-1.5 bg-navy-800 border border-white/06 rounded-full">
-                        <Badge status={s} />
-                        <span className="text-xs text-gray-400 font-medium">{n}</span>
+            {/* Fleet summary strip */}
+            <motion.div variants={fadeUp} className="grid grid-cols-3 gap-4">
+                {[
+                    { label: 'Operational', count: operational, color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200' },
+                    { label: 'Maintenance', count: maintenance, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200' },
+                    { label: 'Out of Service', count: outOfService, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' },
+                ].map((s) => (
+                    <div key={s.label} className={`card p-4 text-center border ${s.border} ${s.bg}`}>
+                        <p className={`text-2xl font-black font-outfit ${s.color}`}>{s.count}</p>
+                        <p className="text-xs text-[#6B7E92] mt-0.5">{s.label}</p>
                     </div>
                 ))}
             </motion.div>
 
-            <motion.div variants={fadeUp}>
-                <Table columns={columns} data={buses} />
+            {/* Bus cards */}
+            <motion.div variants={staggerContainer} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {MOCK_BUSES.map((bus) => {
+                    const s = STATUS_ICONS[bus.status] || STATUS_ICONS.operational;
+                    const Ic = s.Ic;
+                    return (
+                        <motion.div key={bus.id} variants={fadeUp}
+                            whileHover={{ y: -3, boxShadow: '0 8px 24px rgba(18,59,93,0.10)' }}
+                            className="card p-5 transition-all">
+                            <div className="flex items-start justify-between mb-4">
+                                <div className={`w-10 h-10 rounded-xl ${s.bg} border ${s.border} flex items-center justify-center`}>
+                                    <Bus size={18} className={s.color} />
+                                </div>
+                                <Ic size={18} className={s.color} />
+                            </div>
+                            <p className="font-outfit font-bold text-[#14212B] text-lg">{bus.registrationNo}</p>
+                            <p className="text-xs text-[#6B7E92] mt-0.5">{bus.model} · {bus.capacity} seats</p>
+                            <div className="mt-3 pt-3 border-t border-[#F7F9FC] flex justify-between text-xs text-[#98A9BB]">
+                                <span>Year: {bus.year || 2020}</span>
+                                <Badge status={bus.status} />
+                            </div>
+                        </motion.div>
+                    );
+                })}
             </motion.div>
-
-            <Modal isOpen={modal} onClose={() => setModal(false)} title="Add Bus">
-                <div className="space-y-4">
-                    <Input label="Registration No." value={form.regNo} onChange={(e) => setForm({ ...form, regNo: e.target.value })} placeholder="MH-12-AB-0000" />
-                    <Input label="Model" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} placeholder="Tata Starbus 9m" />
-                    <div className="grid grid-cols-2 gap-4">
-                        <Input label="Capacity (seats)" type="number" value={form.capacity} onChange={(e) => setForm({ ...form, capacity: e.target.value })} />
-                        <Select label="Status" value={form.status} options={STATUS_OPTIONS} onChange={(e) => setForm({ ...form, status: e.target.value })} />
-                    </div>
-                    <div className="flex gap-3 mt-2">
-                        <Button variant="primary" className="flex-1" onClick={addBus}>Add Bus</Button>
-                        <Button variant="secondary" onClick={() => setModal(false)}>Cancel</Button>
-                    </div>
-                </div>
-            </Modal>
         </motion.div>
     );
 }
