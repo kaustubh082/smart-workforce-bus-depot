@@ -110,8 +110,10 @@ export default function HeroSection() {
                     </motion.div>
 
                     {/* Main heading */}
-                    <div className="font-outfit font-black leading-none tracking-tight mb-6"
-                        style={{ fontSize: 'clamp(3rem, 8vw, 7rem)', perspective: '800px' }}>
+                    <div
+    className="font-outfit font-black leading-none tracking-tight mb-6 text-white"
+    style={{ fontSize: 'clamp(3rem, 8vw, 7rem)', perspective: '800px' }}
+>
                         <div className="flex flex-wrap">
                             {HEADLINE_1.map((w, i) => (
                                 <Word key={w} word={w} delay={0.8 + i * 0.18} />
@@ -152,6 +154,10 @@ export default function HeroSection() {
                         <Link to="/login"
                             className="flex items-center gap-2.5 px-8 py-4 border border-white/25 hover:border-white/50 bg-white/08 hover:bg-white/14 text-white font-semibold rounded-xl text-base transition-all backdrop-blur-sm">
                             Login
+                        </Link>
+                        <Link to="/guide"
+                            className="flex items-center gap-2.5 px-8 py-4 border border-white/25 hover:border-white/50 bg-white/08 hover:bg-white/14 text-white font-semibold rounded-xl text-base transition-all backdrop-blur-sm">
+                            How to Use
                         </Link>
                     </motion.div>
 

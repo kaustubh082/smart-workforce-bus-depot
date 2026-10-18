@@ -5,6 +5,7 @@ import { AppLayout, RequireAuth, RequireRole } from './components/layout/AppLayo
 
 // Public
 import LandingPage from './pages/public/LandingPage';
+import UserGuidePage from './pages/public/UserGuidePage';
 // Auth
 import LoginPage from './pages/auth/LoginPage';
 import SignupPage from './pages/auth/SignupPage';
@@ -28,6 +29,7 @@ import BusManagementPage from './pages/manager/BusManagementPage';
 import RouteManagementPage from './pages/manager/RouteManagementPage';
 import LeaveApprovalsPage from './pages/manager/LeaveApprovalsPage';
 import ReportsPage from './pages/manager/ReportsPage';
+import ManagerAttendancePage from './pages/manager/ManagerAttendancePage';
 
 export default function App() {
   return (
@@ -36,6 +38,7 @@ export default function App() {
         <Routes>
           {/* Public */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/guide" element={<UserGuidePage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
 
@@ -70,6 +73,7 @@ export default function App() {
                 <Route path="/manager/buses" element={<BusManagementPage />} />
                 <Route path="/manager/routes" element={<RouteManagementPage />} />
                 <Route path="/manager/leave-approvals" element={<LeaveApprovalsPage />} />
+                <Route path="/manager/attendance" element={<ManagerAttendancePage />} />
                 <Route path="/manager/reports" element={<ReportsPage />} />
               </Route>
 

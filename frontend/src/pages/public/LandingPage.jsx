@@ -26,6 +26,7 @@ function Navbar() {
     }, []);
 
     const navLinks = [
+        { to: '/guide', label: 'User Guide' },
         { href: '#features', label: 'Features' },
         { href: '#gallery', label: 'Gallery' },
         { href: '#howitworks', label: 'How it Works' },
@@ -55,12 +56,13 @@ function Navbar() {
 
                     {/* Desktop nav links */}
                     <div className="hidden md:flex items-center gap-6">
-                        {navLinks.map((l) => (
-                            <a key={l.href} href={l.href}
+                        {navLinks.map((l) => l.to ? (
+                            <Link key={l.to} to={l.to}
+                                className="text-white/50 hover:text-white text-sm font-medium transition-colors">{l.label}</Link>
+                        ) : (<a key={l.href} href={l.href}
                                 className="text-white/50 hover:text-white text-sm font-medium transition-colors">
                                 {l.label}
-                            </a>
-                        ))}
+                            </a>))}
                     </div>
 
                     {/* CTA buttons */}
@@ -101,12 +103,11 @@ function Navbar() {
                                 </button>
                             </div>
                             <nav className="flex flex-col gap-1">
-                                {navLinks.map((l) => (
-                                    <a key={l.href} href={l.href} onClick={() => setMobileOpen(false)}
+                                {navLinks.map((l) => l.to ? (<Link key={l.to} to={l.to} onClick={() => setMobileOpen(false)}
+                                    className="px-3 py-2.5 rounded-lg text-white/60 hover:text-white hover:bg-white/06 text-sm font-medium transition-all">{l.label}</Link>) : (<a key={l.href} href={l.href} onClick={() => setMobileOpen(false)}
                                         className="px-3 py-2.5 rounded-lg text-white/60 hover:text-white hover:bg-white/06 text-sm font-medium transition-all">
                                         {l.label}
-                                    </a>
-                                ))}
+                                    </a>))}
                             </nav>
                             <div className="mt-auto flex flex-col gap-3">
                                 <Link to="/login" onClick={() => setMobileOpen(false)}

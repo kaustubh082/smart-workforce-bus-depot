@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    IdCard, User, Phone, Lock, Eye, EyeOff,
+    IdCard, User, Phone, Lock, Eye, EyeOff, Mail,
     ArrowRight, Bus, CheckCircle, AlertCircle, Loader2, ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -197,7 +197,7 @@ function SignupPanel() {
     const navigate = useNavigate();
 
     const [form, setForm] = useState({
-        employeeId: '', name: '', mobile: '', role: 'driver', password: '', confirm: ''
+        employeeId: '', name: '', email: '', mobile: '', role: 'driver', password: '', confirm: ''
     });
     const [dirty, setDirty] = useState({});
     const [showPw, setShowPw] = useState(false);
@@ -215,20 +215,21 @@ function SignupPanel() {
 
     const validEmp = form.employeeId.trim().length >= 3;
     const validName = form.name.trim().length >= 2;
+    const validEmail = /^\S+@\S+\.\S+$/.test(form.email);
     const validMob = /^[6-9]\d{9}$/.test(form.mobile);
-    const validPw = form.password.length >= 6;
+    const validPw = form.password.length >= 8;
     const validCf = form.confirm === form.password && form.confirm.length > 0;
-    const canSubmit = validEmp && validName && validMob && validPw && validCf && !loading;
+    const canSubmit = validEmp && validName && validEmail && validMob && validPw && validCf && !loading;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         // Mark all dirty
-        setDirty({ employeeId: true, name: true, mobile: true, password: true, confirm: true });
+        setDirty({ employeeId: true, name: true, email: true, mobile: true, password: true, confirm: true });
         if (!canSubmit) return;
         setError(''); setLoading(true);
         try {
             const user = await signup({
-                email: `${form.employeeId.toLowerCase()}@depot.com`,
+                email: form.email.trim().toLowerCase(),
                 name: form.name, role: form.role, password: form.password,
                 employeeId: form.employeeId.toUpperCase(),
                 mobile: form.mobile, confirmPassword: form.confirm,
@@ -257,6 +258,7 @@ function SignupPanel() {
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#19A7A8] to-[#2D8CFF] flex items-center justify-center mb-4 shadow-[0_4px_16px_rgba(25,167,168,0.28)]">
                         <ShieldCheck size={18} className="text-white" />
                     </div>
+
                     <h1 className="font-outfit font-black text-[#14212B] text-3xl">Create Your Account</h1>
                     <p className="text-[#6B7E92] text-sm mt-1.5">Get started with simple digital depot operations.</p>
                 </motion.div>
@@ -313,14 +315,27 @@ function SignupPanel() {
                         </motion.div>
                     </div>
 
+                    {/* Email */}
+                    <motion.div variants={item}>
+                        <Field label="Email Address">
+                            <div className="relative group">
+                                <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#98A9BB] group-focus-within:text-[#19A7A8] transition-colors" />
+                                <input type="email" placeholder="you@example.com" value={form.email}
+                                    onChange={set('email')} onBlur={blur('email')}
+                                    className={inputCls('email', validEmail)} style={{ height: 46 }} />
+                            </div>
+                            <ValidationMsg condition={validEmail} message="Enter a valid email address" dirty={dirty.email} />
+                        </Field>
+                    </motion.div>
+
                     {/* Row 2 — Mobile + Role */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <motion.div variants={item}>
                             <Field label="Mobile Number">
                                 <div className="relative group">
                                     <Phone size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#98A9BB] group-focus-within:text-[#19A7A8] transition-colors" />
-                                    <input type="tel" placeholder="98XXXXXXXX" maxLength={10} value={form.mobile}
-                                        onChange={set('mobile')} onBlur={blur('mobile')}
+                                    <input type="tel" inputMode="numeric" placeholder="98XXXXXXXX" maxLength={10} value={form.mobile}
+                                        onChange={(e) => { const mobile = e.target.value.replace(/\D/g, '').slice(0, 10); setError(''); setForm((f) => ({ ...f, mobile })); setDirty((d) => ({ ...d, mobile: true })); }} onBlur={blur('mobile')}
                                         className={inputCls('mobile', validMob)} style={{ height: 46 }} />
                                 </div>
                                 <ValidationMsg condition={validMob} message="Enter a valid 10-digit mobile number" dirty={dirty.mobile} />
@@ -353,7 +368,7 @@ function SignupPanel() {
                         <Field label="Password">
                             <div className="relative group">
                                 <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#98A9BB] group-focus-within:text-[#19A7A8] transition-colors" />
-                                <input type={showPw ? 'text' : 'password'} placeholder="Min 6 characters"
+                                <input type={showPw ? 'text' : 'password'} placeholder="Min 8 characters"
                                     value={form.password} onChange={set('password')} onBlur={blur('password')}
                                     className={`${inputCls('password', validPw)} pr-12`} style={{ height: 46 }} />
                                 <motion.button type="button" whileTap={{ scale: 0.85 }}
@@ -371,7 +386,7 @@ function SignupPanel() {
                                 </motion.button>
                             </div>
                             <PasswordStrength password={form.password} />
-                            <ValidationMsg condition={validPw} message="Password must be at least 6 characters" dirty={dirty.password} />
+                            <ValidationMsg condition={validPw} message="Password must be at least 8 characters" dirty={dirty.password} />
                         </Field>
                     </motion.div>
 

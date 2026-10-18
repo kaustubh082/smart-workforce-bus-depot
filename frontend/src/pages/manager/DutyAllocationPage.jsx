@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Bus, User, MapPin, Clock, Calendar, CheckCircle,
@@ -7,7 +7,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { fadeUp, staggerContainer } from '../../animations/variants';
 import { PageHeader } from '../../components/ui';
-import { MOCK_EMPLOYEES, MOCK_BUSES, MOCK_ROUTES, MOCK_DUTIES, MOCK_LEAVES } from '../../mock/data';
+import { api } from '../../services/api';
 
 // ── helpers ──────────────────────────────────────────────────
 const TODAY = new Date().toISOString().split('T')[0];
@@ -215,37 +215,33 @@ export default function DutyAllocationPage() {
         date: TODAY, employeeId: '', busId: '', routeId: '',
         shift: '', startTime: '06:00', endTime: '14:00', role: 'all',
     });
-    const [status, setStatus] = useState('idle'); // idle | loading | success
-    const [conflicts, setConflicts] = useState([]);
+    const [status, setStatus] = useState('idle'); // idle | loading | success | error
+    const [employees, setEmployees] = useState([]);
+    const [buses, setBuses] = useState([]);
+    const [routes, setRoutes] = useState([]);
+    const [loadError, setLoadError] = useState('');
+
+    useEffect(() => {
+        Promise.all([api('/employees'), api('/buses'), api('/routes')])
+            .then(([employeeData, busData, routeData]) => {
+                setEmployees(employeeData.map((employee) => ({ ...employee, role: employee.role?.toLowerCase(), status: employee.status?.toLowerCase() })));
+                setBuses(busData.map((bus) => ({ ...bus, registrationNo: bus.registration_number, capacity: bus.seating_capacity, status: bus.status === 'AVAILABLE' ? 'operational' : bus.status?.toLowerCase() })));
+                setRoutes(routeData.map((route) => ({ ...route, routeNo: route.route_code, from: route.start_point, to: route.end_point })));
+            })
+            .catch((error) => setLoadError(error.message));
+    }, []);
 
     // ── Derived selections ──
-    const employee = MOCK_EMPLOYEES.find((e) => e.id === form.employeeId);
-    const bus = MOCK_BUSES.find((b) => b.id === form.busId);
-    const route = MOCK_ROUTES.find((r) => r.id === form.routeId);
+    const employee = employees.find((e) => String(e.id) === form.employeeId);
+    const bus = buses.find((b) => String(b.id) === form.busId);
+    const route = routes.find((r) => String(r.id) === form.routeId);
     const shiftObj = SHIFTS.find((s) => s.id === form.shift);
 
     // ── Conflict detection ──
     const detectedConflicts = useMemo(() => {
         const c = [];
-        if (employee && form.date) {
-            const onLeave = MOCK_LEAVES.some((l) =>
-                l.employeeId === employee.id && l.status === 'approved' &&
-                l.startDate <= form.date && l.endDate >= form.date
-            );
-            if (onLeave) c.push({ type: 'error', msg: `${employee.name} is on approved leave on this date.` });
-
-            const hasDuty = MOCK_DUTIES.some((d) =>
-                d.employeeId === employee.id && d.date === form.date
-            );
-            if (!onLeave && hasDuty) c.push({ type: 'warning', msg: `${employee.name} already has a duty assigned on this date.` });
-        }
         if (bus) {
-            if (bus.status === 'maintenance') c.push({ type: 'error', msg: `Bus ${bus.registrationNo} is currently under maintenance.` });
-            else if (bus.status === 'out-of-service') c.push({ type: 'error', msg: `Bus ${bus.registrationNo} is out of service.` });
-            else {
-                const assigned = MOCK_DUTIES.some((d) => d.busReg === bus.registrationNo && d.date === form.date);
-                if (assigned) c.push({ type: 'warning', msg: `Bus ${bus.registrationNo} is already assigned to another duty today.` });
-            }
+            if (bus.status !== 'operational') c.push({ type: 'error', msg: `Bus ${bus.registrationNo} is not available.` });
         }
         if (c.length === 0 && employee && bus && route && form.shift) {
             c.push({ type: 'success', msg: 'All checks passed — ready to assign.' });
@@ -256,7 +252,7 @@ export default function DutyAllocationPage() {
     const hasErrors = detectedConflicts.some((c) => c.type === 'error');
 
     // ── Filtered employees by role ──
-    const filteredEmployees = MOCK_EMPLOYEES.filter(
+    const filteredEmployees = employees.filter(
         (e) => e.status === 'active' && (form.role === 'all' || e.role === form.role)
     );
 
@@ -270,8 +266,17 @@ export default function DutyAllocationPage() {
     const handleAssign = async () => {
         if (hasErrors || !employee || !bus || !route || !form.shift) return;
         setStatus('loading');
-        await new Promise((r) => setTimeout(r, 1600));
-        setStatus('success');
+        try {
+            await api('/duties', { method: 'POST', body: JSON.stringify({
+                employee_id: Number(form.employeeId), bus_id: Number(form.busId), route_id: Number(form.routeId),
+                duty_date: form.date, shift: form.shift.toUpperCase(), start_time: form.startTime, end_time: form.endTime,
+            }) });
+            setStatus('success');
+        } catch (error) {
+            setLoadError(error.message);
+            setStatus('error');
+            return;
+        }
         setTimeout(() => {
             setForm({ date: TODAY, employeeId: '', busId: '', routeId: '', shift: '', startTime: '06:00', endTime: '14:00', role: 'all' });
             setStatus('idle');
@@ -350,7 +355,7 @@ export default function DutyAllocationPage() {
                                 value={form.busId}
                                 onChange={(e) => setForm((p) => ({ ...p, busId: e.target.value }))}>
                                 <option value="">Select bus…</option>
-                                {MOCK_BUSES.map((b) => (
+                                {buses.map((b) => (
                                     <option key={b.id} value={b.id}
                                         disabled={b.status !== 'operational'}>
                                         {b.registrationNo} — {b.model}
@@ -369,7 +374,7 @@ export default function DutyAllocationPage() {
                                 value={form.routeId}
                                 onChange={(e) => setForm((p) => ({ ...p, routeId: e.target.value }))}>
                                 <option value="">Select route…</option>
-                                {MOCK_ROUTES.map((r) => (
+                                {routes.map((r) => (
                                     <option key={r.id} value={r.id}>{r.routeNo}: {r.from} → {r.to}</option>
                                 ))}
                             </select>
@@ -423,6 +428,7 @@ export default function DutyAllocationPage() {
                             <ConflictBadge key={i} type={c.type} msg={c.msg} />
                         ))}
                     </AnimatePresence>
+                    {loadError && <ConflictBadge type="error" msg={loadError} />}
 
                     {/* Assign button */}
                     <AnimatePresence mode="wait">

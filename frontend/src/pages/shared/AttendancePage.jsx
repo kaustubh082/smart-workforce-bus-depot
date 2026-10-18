@@ -1,121 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CheckCircle, LogIn, LogOut, Clock, CalendarCheck } from 'lucide-react';
-import { fadeUp, staggerContainer } from '../../animations/variants';
+import { CheckCircle, LogIn, LogOut, Clock } from 'lucide-react';
 import { Badge } from '../../components/ui';
-import { useAuth } from '../../context/AuthContext';
-import { MOCK_ATTENDANCE } from '../../mock/data';
+import { api } from '../../services/api';
 
-const TODAY = new Date().toISOString().split('T')[0];
-
+const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+const time = (value) => value ? new Date(value).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '--:--';
 export default function AttendancePage() {
-    const { user } = useAuth();
-    const [checkedIn, setCheckedIn] = useState(false);
-    const [checkedOut, setCheckedOut] = useState(false);
-    const [checkInTime, setCheckInTime] = useState(null);
-    const [checkOutTime, setCheckOutTime] = useState(null);
-
-    const history = MOCK_ATTENDANCE.filter((a) => a.employeeId === user?.id).slice(0, 10);
-
-    const handleCheckIn = () => {
-        const t = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-        setCheckedIn(true); setCheckInTime(t);
-    };
-    const handleCheckOut = () => {
-        const t = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-        setCheckedOut(true); setCheckOutTime(t);
-    };
-
-    return (
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
-            <motion.div variants={fadeUp}>
-                <p className="text-[11px] text-[#19A7A8] uppercase tracking-widest font-bold mb-1">Today</p>
-                <h1 className="text-2xl font-black font-outfit text-[#14212B]">Attendance</h1>
-                <p className="text-sm text-[#6B7E92] mt-0.5">
-                    {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
-                </p>
-            </motion.div>
-
-            {/* Check IN / OUT card */}
-            <motion.div variants={fadeUp}
-                className="rounded-2xl p-6 border overflow-hidden"
-                style={{ background: 'linear-gradient(135deg,#E6F7F7 0%,#E8F2FF 100%)', borderColor: '#b2e8e8' }}>
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <p className="text-[10px] text-[#19A7A8] uppercase tracking-widest font-bold mb-1">Status</p>
-                        <p className="font-outfit font-black text-[#14212B] text-xl">
-                            {checkedOut ? 'Shift Complete' : checkedIn ? 'On Duty' : 'Not Checked In'}
-                        </p>
-                    </div>
-                    <div className={`w-12 h-12 rounded-full flex items-center justify-center ${checkedIn ? 'bg-green-100' : 'bg-[#EEF2F7]'}`}>
-                        <CheckCircle size={24} className={checkedIn ? 'text-green-500' : 'text-[#98A9BB]'} />
-                    </div>
-                </div>
-
-                {/* Time display */}
-                <div className="grid grid-cols-2 gap-3 mb-6">
-                    <div className="bg-white rounded-xl p-4 border border-[#E5EAF0]">
-                        <div className="flex items-center gap-2 mb-1">
-                            <LogIn size={13} className="text-green-500" />
-                            <p className="text-[10px] text-[#98A9BB] uppercase tracking-wider font-bold">Check In</p>
-                        </div>
-                        <p className={`font-outfit font-bold text-lg ${checkInTime ? 'text-green-600' : 'text-[#D0DAE6]'}`}>
-                            {checkInTime || '--:--'}
-                        </p>
-                    </div>
-                    <div className="bg-white rounded-xl p-4 border border-[#E5EAF0]">
-                        <div className="flex items-center gap-2 mb-1">
-                            <LogOut size={13} className="text-red-400" />
-                            <p className="text-[10px] text-[#98A9BB] uppercase tracking-wider font-bold">Check Out</p>
-                        </div>
-                        <p className={`font-outfit font-bold text-lg ${checkOutTime ? 'text-red-500' : 'text-[#D0DAE6]'}`}>
-                            {checkOutTime || '--:--'}
-                        </p>
-                    </div>
-                </div>
-
-                {/* Action button */}
-                {!checkedIn ? (
-                    <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}
-                        onClick={handleCheckIn}
-                        className="w-full h-14 rounded-xl font-bold text-white text-base flex items-center justify-center gap-2"
-                        style={{ background: 'linear-gradient(135deg,#19A7A8,#2D8CFF)', boxShadow: '0 4px 16px rgba(25,167,168,0.3)' }}>
-                        <LogIn size={20} /> Check In Now
-                    </motion.button>
-                ) : !checkedOut ? (
-                    <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.97 }}
-                        onClick={handleCheckOut}
-                        className="w-full h-14 rounded-xl font-bold text-white text-base flex items-center justify-center gap-2"
-                        style={{ background: 'linear-gradient(135deg,#ef4444,#f97316)', boxShadow: '0 4px 16px rgba(239,68,68,0.25)' }}>
-                        <LogOut size={20} /> Check Out
-                    </motion.button>
-                ) : (
-                    <div className="w-full h-14 rounded-xl bg-green-100 border border-green-200 flex items-center justify-center gap-2 font-bold text-green-700">
-                        <CheckCircle size={20} /> Shift recorded
-                    </div>
-                )}
-            </motion.div>
-
-            {/* Attendance history */}
-            <motion.div variants={fadeUp}>
-                <p className="text-[10px] font-bold text-[#6B7E92] uppercase tracking-widest mb-3">History</p>
-                <div className="card divide-y divide-[#F7F9FC]">
-                    {history.length === 0 && <p className="p-4 text-sm text-[#98A9BB] text-center">No records</p>}
-                    {history.map((a) => (
-                        <div key={a.id} className="flex items-center justify-between p-4">
-                            <div>
-                                <p className="text-sm font-semibold text-[#14212B]">{a.date}</p>
-                                <p className="text-xs text-[#98A9BB] flex items-center gap-1 mt-0.5">
-                                    <Clock size={10} />
-                                    {a.checkIn ? `In: ${a.checkIn}` : 'No check-in'}
-                                    {a.checkOut ? ` · Out: ${a.checkOut}` : ''}
-                                </p>
-                            </div>
-                            <Badge status={a.status} />
-                        </div>
-                    ))}
-                </div>
-            </motion.div>
-        </motion.div>
-    );
+    const [history, setHistory] = useState([]); const [error, setError] = useState(''); const [saving, setSaving] = useState(false);
+    const load = () => api('/attendance/my').then(setHistory).catch((err) => setError(err.message));
+    useEffect(() => { load(); }, []);
+    const record = history.find((item) => item.attendance_date === today());
+    const checkIn = async () => { setSaving(true); setError(''); try { await api('/attendance', { method: 'POST', body: JSON.stringify({ attendance_date: today(), status: 'PRESENT' }) }); await load(); } catch (err) { setError(err.message); } finally { setSaving(false); } };
+    const checkOut = async () => { setSaving(true); setError(''); try { await api('/attendance/checkout', { method: 'PATCH', body: JSON.stringify({ attendance_date: today() }) }); await load(); } catch (err) { setError(err.message); } finally { setSaving(false); } };
+    return <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-6"><div><p className="text-[11px] text-[#19A7A8] uppercase tracking-widest font-bold">Today</p><h1 className="text-2xl font-black font-outfit text-[#14212B]">Attendance</h1></div>{error && <p className="text-sm text-red-600">{error}</p>}<div className="rounded-2xl p-6 border" style={{ background: 'linear-gradient(135deg,#E6F7F7,#E8F2FF)', borderColor: '#b2e8e8' }}><p className="font-black text-xl text-[#14212B]">{record?.check_out_at ? 'Shift Complete' : record ? 'On Duty' : 'Not Checked In'}</p><div className="grid grid-cols-2 gap-3 my-6"><div className="bg-white rounded-xl p-4"><p className="text-xs text-[#6B7E92] flex gap-2"><LogIn size={14} className="text-green-600" />Check In</p><p className="font-bold text-lg">{time(record?.marked_at)}</p></div><div className="bg-white rounded-xl p-4"><p className="text-xs text-[#6B7E92] flex gap-2"><LogOut size={14} className="text-red-500" />Check Out</p><p className="font-bold text-lg">{time(record?.check_out_at)}</p></div></div>{!record ? <button disabled={saving} onClick={checkIn} className="w-full h-14 rounded-xl font-bold text-white bg-[#19A7A8] disabled:opacity-50"><LogIn className="inline mr-2" size={20} />Check In Now</button> : !record.check_out_at ? <button disabled={saving} onClick={checkOut} className="w-full h-14 rounded-xl font-bold text-white bg-[#ef4444] disabled:opacity-50"><LogOut className="inline mr-2" size={20} />Check Out</button> : <div className="w-full h-14 rounded-xl bg-green-100 text-green-700 flex justify-center items-center font-bold"><CheckCircle className="mr-2" size={20} />Shift recorded</div>}</div><div><p className="text-xs font-bold text-[#6B7E92] uppercase mb-3">History</p><div className="card divide-y">{history.length ? history.map((item) => <div key={item.id} className="p-4 flex justify-between"><div><p className="font-semibold">{item.attendance_date}</p><p className="text-xs text-[#98A9BB] flex gap-1"><Clock size={12} />In: {time(item.marked_at)} · Out: {time(item.check_out_at)}</p></div><Badge status={item.status?.toLowerCase()} /></div>) : <p className="p-4 text-center text-[#98A9BB]">No records</p>}</div></div></motion.div>;
 }

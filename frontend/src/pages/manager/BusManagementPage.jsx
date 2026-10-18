@@ -1,67 +1,15 @@
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Bus, Plus, Wrench, CheckCircle, XCircle } from 'lucide-react';
-import { fadeUp, staggerContainer } from '../../animations/variants';
-import { PageHeader, Badge, Button } from '../../components/ui';
-import { MOCK_BUSES } from '../../mock/data';
+import { Bus, Plus } from 'lucide-react';
+import { PageHeader, Badge, Button, Modal, Input, Select } from '../../components/ui';
+import { api } from '../../services/api';
 
-const STATUS_ICONS = {
-    operational: { Ic: CheckCircle, color: 'text-green-500', bg: 'bg-green-50', border: 'border-green-200' },
-    maintenance: { Ic: Wrench, color: 'text-amber-500', bg: 'bg-amber-50', border: 'border-amber-200' },
-    'out-of-service': { Ic: XCircle, color: 'text-red-500', bg: 'bg-red-50', border: 'border-red-200' },
-};
-
+const blank = { registration_number: '', model: '', seating_capacity: '', fuel_type: 'Diesel', status: 'AVAILABLE' };
 export default function BusManagementPage() {
-    const operational = MOCK_BUSES.filter(b => b.status === 'operational').length;
-    const maintenance = MOCK_BUSES.filter(b => b.status === 'maintenance').length;
-    const outOfService = MOCK_BUSES.filter(b => b.status === 'out-of-service').length;
-
-    return (
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
-            <motion.div variants={fadeUp}>
-                <PageHeader title="Bus Fleet"
-                    subtitle={`${MOCK_BUSES.length} buses · ${operational} operational`}
-                    action={<Button><Plus size={15} /> Add Bus</Button>} />
-            </motion.div>
-
-            {/* Fleet summary strip */}
-            <motion.div variants={fadeUp} className="grid grid-cols-3 gap-4">
-                {[
-                    { label: 'Operational', count: operational, color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-200' },
-                    { label: 'Maintenance', count: maintenance, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200' },
-                    { label: 'Out of Service', count: outOfService, color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-200' },
-                ].map((s) => (
-                    <div key={s.label} className={`card p-4 text-center border ${s.border} ${s.bg}`}>
-                        <p className={`text-2xl font-black font-outfit ${s.color}`}>{s.count}</p>
-                        <p className="text-xs text-[#6B7E92] mt-0.5">{s.label}</p>
-                    </div>
-                ))}
-            </motion.div>
-
-            {/* Bus cards */}
-            <motion.div variants={staggerContainer} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {MOCK_BUSES.map((bus) => {
-                    const s = STATUS_ICONS[bus.status] || STATUS_ICONS.operational;
-                    const Ic = s.Ic;
-                    return (
-                        <motion.div key={bus.id} variants={fadeUp}
-                            whileHover={{ y: -3, boxShadow: '0 8px 24px rgba(18,59,93,0.10)' }}
-                            className="card p-5 transition-all">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className={`w-10 h-10 rounded-xl ${s.bg} border ${s.border} flex items-center justify-center`}>
-                                    <Bus size={18} className={s.color} />
-                                </div>
-                                <Ic size={18} className={s.color} />
-                            </div>
-                            <p className="font-outfit font-bold text-[#14212B] text-lg">{bus.registrationNo}</p>
-                            <p className="text-xs text-[#6B7E92] mt-0.5">{bus.model} · {bus.capacity} seats</p>
-                            <div className="mt-3 pt-3 border-t border-[#F7F9FC] flex justify-between text-xs text-[#98A9BB]">
-                                <span>Year: {bus.year || 2020}</span>
-                                <Badge status={bus.status} />
-                            </div>
-                        </motion.div>
-                    );
-                })}
-            </motion.div>
-        </motion.div>
-    );
+    const [buses, setBuses] = useState([]); const [form, setForm] = useState(blank); const [open, setOpen] = useState(false); const [saving, setSaving] = useState(false); const [error, setError] = useState('');
+    const load = () => api('/buses').then(setBuses).catch((err) => setError(err.message));
+    useEffect(() => { load(); }, []);
+    const save = async () => { if (!form.registration_number || !form.model || !Number(form.seating_capacity)) return setError('Enter the registration number, model, and seating capacity.'); setSaving(true); setError(''); try { await api('/buses', { method: 'POST', body: JSON.stringify({ ...form, seating_capacity: Number(form.seating_capacity) }) }); setOpen(false); setForm(blank); load(); } catch (err) { setError(err.message); } finally { setSaving(false); } };
+    const available = buses.filter((b) => b.status === 'AVAILABLE').length;
+    return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6"><PageHeader title="Bus Fleet" subtitle={`${buses.length} buses · ${available} available`} action={<Button onClick={() => { setError(''); setOpen(true); }}><Plus size={15} /> Add Bus</Button>} />{error && <p className="text-sm text-red-600">{error}</p>}<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">{buses.map((bus) => <div key={bus.id} className="card p-5"><div className="flex justify-between mb-4"><div className="w-10 h-10 rounded-xl bg-[#E6F7F7] flex items-center justify-center"><Bus size={18} className="text-[#19A7A8]" /></div><Badge status={bus.status === 'AVAILABLE' ? 'operational' : 'maintenance'} label={bus.status.replaceAll('_', ' ')} /></div><p className="font-bold text-lg text-[#14212B]">{bus.registration_number}</p><p className="text-sm text-[#6B7E92]">{bus.model} · {bus.seating_capacity} seats</p><p className="text-xs text-[#98A9BB] mt-3">{bus.fuel_type}</p></div>)}</div><Modal open={open} onClose={() => setOpen(false)} title="Add Bus" footer={<><Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button><Button loading={saving} onClick={save}>Save Bus</Button></>}><div className="space-y-4"><Input label="Registration Number" value={form.registration_number} onChange={(e) => setForm({ ...form, registration_number: e.target.value.toUpperCase() })} placeholder="MH12AB1234" /><Input label="Model" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} placeholder="Tata Starbus" /><Input label="Seating Capacity" type="number" min="1" value={form.seating_capacity} onChange={(e) => setForm({ ...form, seating_capacity: e.target.value })} /><Select label="Fuel Type" value={form.fuel_type} onChange={(e) => setForm({ ...form, fuel_type: e.target.value })}><option>Diesel</option><option>CNG</option><option>Electric</option></Select></div></Modal></motion.div>;
 }

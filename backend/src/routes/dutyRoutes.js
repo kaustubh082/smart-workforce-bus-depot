@@ -5,7 +5,7 @@ import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError, notFound } from '../utils/errors.js';
 import { audit } from '../services/auditService.js';
 const router=Router(); const manager=[requireAuth,requireRole('DEPOT_MANAGER','ADMIN')];
-const dutySelect=`SELECT d.*,e.name employee_name,e.employee_id employee_code,b.registration_number,r.route_code,r.route_name FROM duties d JOIN employees e ON e.id=d.employee_id JOIN buses b ON b.id=d.bus_id JOIN routes r ON r.id=d.route_id`;
+const dutySelect=`SELECT d.*,e.name employee_name,e.employee_id employee_code,b.registration_number,r.route_code,r.route_name,r.start_point route_from,r.end_point route_to FROM duties d JOIN employees e ON e.id=d.employee_id JOIN buses b ON b.id=d.bus_id JOIN routes r ON r.id=d.route_id`;
 const timeOK=(v)=>/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(v||'');
 async function validateDuty(c,d,id=null){
   const {employee_id,bus_id,route_id,duty_date,start_time,end_time,shift}=d;

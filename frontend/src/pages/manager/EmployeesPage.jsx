@@ -14,7 +14,7 @@ export default function EmployeesPage() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState('');
     const [editing, setEditing] = useState(null);
-    const emptyForm = { name: '', employeeId: '', email: '', mobile: '', role: 'driver' };
+    const emptyForm = { name: '', employeeId: '', email: '', mobile: '', role: 'driver', password: '' };
     const [form, setForm] = useState(emptyForm);
 
     const loadEmployees = async () => {
@@ -28,11 +28,11 @@ export default function EmployeesPage() {
     useEffect(() => { loadEmployees(); }, []);
 
     const openAdd = () => { setEditing(null); setForm(emptyForm); setError(''); setShowAdd(true); };
-    const openEdit = (emp) => { setEditing(emp); setForm({ name: emp.name, employeeId: emp.employeeId, email: emp.email || '', mobile: emp.mobile || '', role: emp.role }); setError(''); setShowAdd(true); };
+    const openEdit = (emp) => { setEditing(emp); setForm({ name: emp.name, employeeId: emp.employeeId, email: emp.email || '', mobile: emp.mobile || '', role: emp.role, password: '' }); setError(''); setShowAdd(true); };
     const saveEmployee = async () => {
-        if (!form.name || !form.employeeId || !form.email || !form.mobile) { setError('Please complete all employee details.'); return; }
+        if (!form.name || !form.employeeId || !form.email || !form.mobile || (!editing && form.password.length < 8)) { setError(editing ? 'Please complete all employee details.' : 'Complete all details and set an initial password of at least 8 characters.'); return; }
         setSaving(true); setError('');
-        const body = { name: form.name, email: form.email, phone: form.mobile, designation: form.role.toUpperCase(), ...(editing ? {} : { employee_id: form.employeeId, joining_date: new Date().toISOString().slice(0, 10) }) };
+        const body = { name: form.name, email: form.email, phone: form.mobile, designation: form.role.toUpperCase(), ...(editing ? {} : { employee_id: form.employeeId, joining_date: new Date().toISOString().slice(0, 10), password: form.password }) };
         try {
             if (editing) await api(`/employees/${editing.id}`, { method: 'PUT', body: JSON.stringify(body) });
             else await api('/employees', { method: 'POST', body: JSON.stringify(body) });
@@ -138,6 +138,7 @@ export default function EmployeesPage() {
                     <Input label="Employee ID" value={form.employeeId} disabled={Boolean(editing)} onChange={(e) => setForm({ ...form, employeeId: e.target.value })} placeholder="e.g. DRV-050" />
                     <Input label="Email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="employee@example.com" />
                     <Input label="Mobile" value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} placeholder="98XXXXXXXX" />
+                    {!editing && <Input label="Initial Password" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="At least 8 characters" />}
                     <div>
                         <label className="text-xs font-semibold text-[#425466] uppercase tracking-wider block mb-1.5">Role</label>
                         <select value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value })} className="input-base bg-white">

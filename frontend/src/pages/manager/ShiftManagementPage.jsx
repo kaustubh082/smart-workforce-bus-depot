@@ -1,55 +1,12 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Plus, Sun, Moon, Sunset } from 'lucide-react';
-import { fadeUp, staggerContainer } from '../../animations/variants';
-import { PageHeader, Button } from '../../components/ui';
+import { PageHeader, Button, Modal, Input } from '../../components/ui';
 
-const SHIFTS = [
-    { name: 'Morning Shift', time: '06:00 – 14:00', icon: Sun, color: '#f59e0b', bg: '#fef3c7', border: '#fde68a', workers: 8 },
-    { name: 'Afternoon Shift', time: '14:00 – 22:00', icon: Sunset, color: '#19A7A8', bg: '#E6F7F7', border: '#b2e8e8', workers: 7 },
-    { name: 'Night Shift', time: '22:00 – 06:00', icon: Moon, color: '#6366f1', bg: '#ede9fe', border: '#c4b5fd', workers: 5 },
-];
-
+const defaults = [{ name: 'Morning Shift', start: '06:00', end: '14:00', icon: Sun, color: '#f59e0b', bg: '#fef3c7' }, { name: 'Afternoon Shift', start: '14:00', end: '22:00', icon: Sunset, color: '#19A7A8', bg: '#E6F7F7' }, { name: 'Night Shift', start: '22:00', end: '06:00', icon: Moon, color: '#6366f1', bg: '#ede9fe' }];
 export default function ShiftManagementPage() {
-    return (
-        <motion.div variants={staggerContainer} initial="hidden" animate="visible" className="space-y-6">
-            <motion.div variants={fadeUp}>
-                <PageHeader title="Shift Management" subtitle="Configure and monitor depot shifts"
-                    action={<Button><Plus size={15} /> Add Shift</Button>} />
-            </motion.div>
-
-            <motion.div variants={staggerContainer} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {SHIFTS.map(({ name, time, icon: Icon, color, bg, border, workers }) => (
-                    <motion.div key={name} variants={fadeUp}
-                        whileHover={{ y: -3, boxShadow: '0 8px 24px rgba(18,59,93,0.10)' }}
-                        className="card p-6 transition-all" style={{ borderColor: border, background: bg }}>
-                        <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center mb-4"
-                            style={{ boxShadow: '0 2px 8px rgba(18,59,93,0.08)' }}>
-                            <Icon size={22} style={{ color }} />
-                        </div>
-                        <h3 className="font-outfit font-bold text-[#14212B] mb-1">{name}</h3>
-                        <div className="flex items-center gap-1.5 text-sm text-[#6B7E92] mb-3">
-                            <Clock size={13} style={{ color }} />
-                            {time}
-                        </div>
-                        <div className="flex items-center justify-between pt-3 border-t border-[#E5EAF0]">
-                            <span className="text-xs text-[#98A9BB]">{workers} workers</span>
-                            <button className="text-xs font-semibold transition-colors" style={{ color }}>
-                                Edit →
-                            </button>
-                        </div>
-                    </motion.div>
-                ))}
-            </motion.div>
-
-            {/* Info note */}
-            <motion.div variants={fadeUp}
-                className="card p-4 flex items-start gap-3 border border-[#E5EAF0] bg-[#F7F9FC]">
-                <Clock size={16} className="text-[#19A7A8] mt-0.5 shrink-0" />
-                <p className="text-sm text-[#6B7E92]">
-                    Shifts are assigned during Duty Allocation. To change the schedule for a specific date, go to
-                    <span className="text-[#19A7A8] font-semibold"> Duty Allocation</span>.
-                </p>
-            </motion.div>
-        </motion.div>
-    );
+    const [shifts, setShifts] = useState(() => { try { return JSON.parse(localStorage.getItem('depot_shifts')) || defaults; } catch { return defaults; } });
+    const [form, setForm] = useState({ name: '', start: '', end: '' }); const [open, setOpen] = useState(false); const [error, setError] = useState('');
+    const save = () => { if (!form.name || !form.start || !form.end) return setError('Enter a shift name, start time, and end time.'); const next = [...shifts, { ...form, icon: Clock, color: '#2D8CFF', bg: '#E8F2FF' }]; setShifts(next); localStorage.setItem('depot_shifts', JSON.stringify(next.map(({ icon, ...shift }) => shift))); setOpen(false); setForm({ name: '', start: '', end: '' }); };
+    return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6"><PageHeader title="Shift Management" subtitle="Configure and monitor depot shifts" action={<Button onClick={() => { setError(''); setOpen(true); }}><Plus size={15} /> Add Shift</Button>} />{error && <p className="text-sm text-red-600">{error}</p>}<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">{shifts.map((shift, index) => { const Icon = shift.icon || Clock; return <div key={`${shift.name}-${index}`} className="card p-6" style={{ background: shift.bg }}><div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center mb-4"><Icon size={22} style={{ color: shift.color }} /></div><h3 className="font-bold text-[#14212B]">{shift.name}</h3><p className="flex items-center gap-2 text-sm text-[#6B7E92] mt-2"><Clock size={14} />{shift.start} – {shift.end}</p></div>; })}</div><p className="card p-4 text-sm text-[#6B7E92]">New shifts are saved in this browser. Duty Allocation currently uses the standard Morning, Afternoon, and Night shifts.</p><Modal open={open} onClose={() => setOpen(false)} title="Add Shift" footer={<><Button variant="secondary" onClick={() => setOpen(false)}>Cancel</Button><Button onClick={save}>Save Shift</Button></>}><div className="space-y-4"><Input label="Shift Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Early Shift" /><Input label="Start Time" type="time" value={form.start} onChange={(e) => setForm({ ...form, start: e.target.value })} /><Input label="End Time" type="time" value={form.end} onChange={(e) => setForm({ ...form, end: e.target.value })} /></div></Modal></motion.div>;
 }

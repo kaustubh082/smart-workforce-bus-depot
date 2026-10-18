@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Bus, Clock, MapPin, CheckCircle, Calendar, Bell,
@@ -9,7 +9,8 @@ import { useAuth } from '../../context/AuthContext';
 import { useCountUp } from '../../hooks';
 import { fadeUp, staggerContainer } from '../../animations/variants';
 import { Badge } from '../../components/ui';
-import { MOCK_DUTIES, MOCK_ATTENDANCE, MOCK_NOTIFICATIONS } from '../../mock/data';
+import { MOCK_ATTENDANCE, MOCK_NOTIFICATIONS } from '../../mock/data';
+import { api } from '../../services/api';
 
 // ── helpers ──────────────────────────────────────────────
 function getGreeting() {
@@ -76,7 +77,7 @@ function RouteTimeline({ busReg }) {
 }
 
 // ── Today's duty card ─────────────────────────────────────
-function TodayDutyCard({ duty }) {
+function TodayDutyCard({ duty, heading = "Today's Duty" }) {
     if (!duty) return (
         <div className="card p-8 text-center">
             <div className="w-14 h-14 rounded-2xl bg-[#EEF2F7] flex items-center justify-center mx-auto mb-3">
@@ -95,7 +96,7 @@ function TodayDutyCard({ duty }) {
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                     <div>
-                        <p className="text-[10px] text-[#19A7A8] uppercase tracking-widest font-bold mb-1">Today's Duty</p>
+                        <p className="text-[10px] text-[#19A7A8] uppercase tracking-widest font-bold mb-1">{heading}</p>
                         <h2 className="font-outfit font-black text-[#14212B] text-xl">Route {duty.routeNo}</h2>
                     </div>
                     <Badge status={duty.status} />
@@ -180,8 +181,27 @@ function LatestNotification({ notif }) {
 // ── Page ─────────────────────────────────────────────────
 export default function DriverDashboard() {
     const { user } = useAuth();
-    const today = new Date().toISOString().split('T')[0];
-    const todayDuty = MOCK_DUTIES.find((d) => d.employeeId === user?.id && d.date === today);
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata' }).format(new Date());
+    const [duties, setDuties] = useState([]);
+    const [dutyError, setDutyError] = useState('');
+
+    useEffect(() => {
+        api('/duties/my')
+            .then(setDuties)
+            .catch((error) => setDutyError(error.message));
+    }, []);
+
+    const rawTodayDuty = duties.find((d) => d.duty_date === today && d.status === 'ASSIGNED');
+    const rawNextDuty = rawTodayDuty || duties.find((d) => d.duty_date >= today && d.status === 'ASSIGNED');
+    const todayDuty = rawNextDuty && {
+        routeNo: rawNextDuty.route_code,
+        busReg: rawNextDuty.registration_number,
+        startTime: rawNextDuty.start_time?.slice(0, 5),
+        endTime: rawNextDuty.end_time?.slice(0, 5),
+        routeFrom: rawNextDuty.route_from,
+        routeTo: rawNextDuty.route_to,
+        status: rawNextDuty.status?.toLowerCase(),
+    };
     const todayAtt = MOCK_ATTENDANCE.find((a) => a.employeeId === user?.id && a.date === today);
     const notifs = MOCK_NOTIFICATIONS.filter((n) => n.userId === user?.id);
     const latestN = notifs[0];
@@ -211,7 +231,8 @@ export default function DriverDashboard() {
 
             {/* ── Today's Duty Card ── */}
             <motion.div variants={fadeUp}>
-                <TodayDutyCard duty={todayDuty} />
+                <TodayDutyCard duty={todayDuty} heading={rawTodayDuty ? "Today's Duty" : rawNextDuty ? `Next Duty · ${rawNextDuty.duty_date}` : "Today's Duty"} />
+                {dutyError && <p className="mt-2 text-sm text-red-600">Unable to load your duties: {dutyError}</p>}
             </motion.div>
 
             {/* ── Primary Action Button ── */}
